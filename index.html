@@ -1,0 +1,2540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Graphics Editor v1</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#11141a;
+    --card:#1a1f29;
+    --card-2:#212833;
+    --card-3:#252c38;
+    --line:#2b3240;
+    --text:#d7dbe2;
+    --text-dim:#828a99;
+    --text-bright:#f5f6f8;
+    --accent:#e8a23c;
+    --accent-soft:rgba(232,162,60,0.14);
+    --good:#6b9e5e;
+    --bad:#e0654f;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  body{min-height:100vh;}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#2a3040;border-radius:5px;}
+
+  .wrap{max-width:840px;margin:0 auto;padding:0 18px 90px;}
+
+  /* ===== HEADER ===== */
+  .topbar{
+    padding:16px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#161a22,#11141a);
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar-inner{max-width:840px;margin:0 auto;}
+  .title-row{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
+  .title-row h1{font-size:17px;margin:0;color:var(--text-bright);font-weight:700;}
+  .subtitle{font-size:13px;color:var(--text-dim);margin:0;}
+
+  .file-row{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .filename-pill{
+    font-size:12px;color:var(--text-dim);background:var(--card);border:1px solid var(--line);
+    border-radius:20px;padding:6px 12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-family:var(--mono);
+  }
+  .spacer{flex:1;}
+  .btn{
+    font-weight:600;font-size:13px;padding:9px 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;
+    white-space:nowrap;
+  }
+  .btn:hover{background:var(--card-2);}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--accent);color:#1d1304;border-color:var(--accent);}
+  .btn.primary:hover{background:#f3ad48;}
+  .btn.small{padding:6px 11px;font-size:12px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn svg{width:15px;height:15px;flex-shrink:0;}
+  input[type=file]{display:none;}
+
+  /* ===== SEARCH + NAV ===== */
+  .search-row{display:flex;gap:8px;margin-top:12px;}
+  .search-input{
+    flex:1;font-size:13px;padding:9px 13px;border-radius:8px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-family:inherit;
+  }
+  .search-input:focus{outline:none;border-color:var(--accent);}
+  .search-input::placeholder{color:var(--text-dim);}
+
+  .section-nav{display:flex;gap:6px;overflow-x:auto;margin-top:0;padding-bottom:2px;flex:1;scroll-behavior:smooth;}
+  .section-nav::-webkit-scrollbar{height:0;}
+  .section-nav button{
+    flex-shrink:0;font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;
+    border:1px solid var(--line);background:var(--card);color:var(--text-dim);cursor:pointer;
+  }
+  .section-nav button:hover{color:var(--text);}
+  .section-nav button.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);}
+
+  .nav-scroll-wrap{display:flex;align-items:center;gap:6px;margin-top:10px;}
+  .nav-arrow{
+    flex-shrink:0;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);
+    background:var(--card-2);color:var(--text-dim);cursor:pointer;font-size:10px;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .nav-arrow:hover{color:var(--text-bright);border-color:var(--accent);}
+  .nav-arrow:disabled{opacity:.25;cursor:default;pointer-events:none;}
+  .nav-arrow.is-hidden{display:none;}
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state{margin:60px auto 0;max-width:460px;text-align:center;padding:0 16px;}
+  .empty-state .icon-circle{
+    width:64px;height:64px;border-radius:50%;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 22px;
+  }
+  .empty-state .icon-circle svg{width:30px;height:30px;color:var(--accent);}
+  .empty-state h2{font-size:18px;color:var(--text-bright);margin:0 0 8px;font-weight:700;}
+  .empty-state p{font-size:14px;color:var(--text-dim);line-height:1.6;margin:0 0 24px;}
+  .drop-target{border:1.5px dashed #353c4d;border-radius:14px;padding:28px 20px;cursor:pointer;}
+  .drop-target:hover, .drop-target.dragover{border-color:var(--accent);background:var(--accent-soft);}
+  .drop-target .browse-text{color:var(--accent);font-weight:600;}
+
+  /* ===== REGION TOGGLE ===== */
+  .region-toggle{
+    display:flex;gap:6px;margin:18px 0 4px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:4px;
+  }
+  .region-toggle button{
+    flex:1;padding:9px 0;border:none;background:transparent;border-radius:7px;
+    color:var(--text-dim);font-weight:600;font-size:13px;cursor:pointer;
+  }
+  .region-toggle button.active{background:var(--accent);color:#1d1304;}
+  .region-hint{font-size:12px;color:var(--text-dim);margin:0 2px 10px;line-height:1.5;}
+
+  .toolrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 20px;}
+  .stat-pill{
+    font-size:11.5px;font-family:var(--mono);color:var(--text-dim);background:var(--card);
+    border:1px solid var(--line);border-radius:20px;padding:5px 11px;
+  }
+  .stat-pill b{color:var(--accent);font-weight:600;}
+
+  /* ===== SECTION ===== */
+  .section-block{margin-bottom:8px;scroll-margin-top:210px;}
+  .section-label{
+    font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--text-dim);margin:26px 2px 10px;display:flex;align-items:center;gap:8px;
+  }
+  .section-label .count{font-weight:500;color:var(--text-dim);opacity:.7;}
+
+  /* ===== PARAM CARDS ===== */
+  .param-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    margin-bottom:8px;overflow:hidden;
+  }
+  .param-card.is-hidden{display:none;}
+  .card-head{padding:13px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;}
+  .card-head:hover{background:var(--card-2);}
+  .card-chevron{flex-shrink:0;width:18px;height:18px;color:var(--text-dim);transition:transform .15s;}
+  .param-card.open .card-chevron{transform:rotate(90deg);}
+  .card-main{flex:1;min-width:0;}
+  .param-name{font-size:14px;font-weight:600;color:var(--text-bright);display:flex;align-items:center;gap:7px;}
+  .param-help{font-size:12px;color:var(--text-dim);margin:2px 0 0;line-height:1.5;}
+  .preview-wrap{margin-top:8px;}
+  .gradient-bar{height:10px;border-radius:5px;border:1px solid rgba(255,255,255,.08);}
+  .sparkline{display:block;}
+
+  .changed-tag{
+    font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+    border-radius:5px;padding:2px 6px;letter-spacing:.3px;flex-shrink:0;
+  }
+
+  /* ===== .dat FLAT SETTINGS ROWS ===== */
+  .dat-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+  .dat-row:last-child{border-bottom:none;}
+  .dat-row.is-hidden{display:none;}
+  .tree-entry .card-body{display:none;}
+  .tree-entry.open .card-body{display:block;}
+  .dat-row-label{flex:1;min-width:0;}
+  .dat-row-name{font-size:13px;color:var(--text-bright);font-weight:500;}
+  .dat-row-key{font-size:10.5px;color:var(--text-dim);font-family:var(--mono);display:block;margin-top:1px;}
+  .dat-row input{
+    width:104px;flex-shrink:0;font-size:12.5px;text-align:right;padding:7px 9px;border-radius:6px;
+    border:1px solid var(--line);background:var(--bg);color:var(--text);font-family:var(--mono);
+  }
+  .dat-row input:focus{outline:none;border-color:var(--accent);}
+  .dat-row input.edited{border-color:var(--accent);color:var(--accent);}
+  .dat-alpha-input{
+    width:64px;flex-shrink:0;font-size:12px;text-align:center;padding:7px 6px;border-radius:6px;
+    border:1px solid var(--line);background:var(--bg);color:var(--text);font-family:var(--mono);
+  }
+  .dat-alpha-input:focus{outline:none;border-color:var(--accent);}
+
+  /* ===== .attr FIELD ROWS ===== */
+  .attr-row .field-row{display:flex;flex-wrap:wrap;gap:10px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:9.5px;color:var(--text-dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;}
+  .attr-input{
+    width:110px;font-size:12.5px;padding:7px 9px;border-radius:6px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font-family:var(--mono);
+  }
+  .attr-input:focus{outline:none;border-color:var(--accent);}
+  .attr-input.edited{border-color:var(--accent);color:var(--accent);}
+  .attr-row .card-body{padding-top:0;}
+
+  .card-body{padding:0 14px 16px;border-top:1px solid var(--line);}
+  .card-actions{display:flex;gap:8px;margin:12px 0 4px;}
+  .mini-btn{
+    font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+    background:var(--card-2);color:var(--text-dim);cursor:pointer;
+  }
+  .mini-btn:hover{color:var(--text);}
+  .mini-btn.warn:hover{color:var(--bad);border-color:var(--bad);}
+
+  .keyframe-strip{display:flex;gap:4px;margin-top:14px;overflow-x:auto;padding-bottom:4px;}
+  .kf-point{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;width:46px;}
+  .kf-hour{font-size:9.5px;color:var(--text-dim);font-family:var(--mono);}
+  .kf-swatch{
+    width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);
+    cursor:pointer;padding:0;position:relative;
+  }
+  .kf-swatch input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .kf-num{
+    width:46px;font-size:11px;text-align:center;padding:6px 2px;border-radius:6px;
+    border:1px solid var(--line);background:var(--bg);color:var(--text);font-family:var(--mono);
+  }
+  .kf-num:focus{outline:none;border-color:var(--accent);}
+  .kf-hex{
+    width:56px;font-size:10px;text-align:center;padding:3px 2px;border-radius:5px;margin-top:4px;
+    border:1px solid var(--line);background:var(--bg);color:var(--text-dim);font-family:var(--mono);
+    text-transform:lowercase;
+  }
+  .kf-hex:focus{outline:none;border-color:var(--accent);color:var(--text);}
+
+  .quickrow{display:flex;gap:14px;flex-shrink:0;}
+  .quick-item{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .quick-label{font-size:9.5px;color:var(--text-dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;}
+  .quick-swatch{width:28px;height:28px;}
+  .quick-hex{width:56px;}
+  .quick-num{width:58px;}
+  @media(max-width:560px){ .quickrow{display:none;} }
+
+  .mini-btn.paste-param-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .mini-btn.paste-param-btn:not(:disabled):hover{color:var(--accent);border-color:var(--accent);}
+
+  .section-nav.dragging, .keyframe-strip.dragging{cursor:grabbing;user-select:none;}
+  .section-nav{cursor:grab;}
+  .keyframe-strip{cursor:grab;}
+
+  .warn-banner{
+    background:rgba(232,162,60,.1);border:1px solid rgba(232,162,60,.3);border-radius:10px;
+    padding:11px 14px;font-size:12.5px;color:#e8b96b;line-height:1.6;margin:16px 0 4px;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .warn-banner svg{width:16px;height:16px;flex-shrink:0;margin-top:1px;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);
+    background:var(--card-2);border:1px solid var(--line);border-radius:9px;
+    padding:11px 18px;font-size:13px;color:var(--text-bright);
+    opacity:0;transition:all .25s ease;pointer-events:none;z-index:50;
+    display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast .dot{width:6px;height:6px;border-radius:50%;background:var(--good);flex-shrink:0;}
+
+  .footer-note{text-align:center;font-size:12px;color:var(--text-dim);margin-top:30px;line-height:1.6;}
+
+  details.raw-group{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;
+  }
+  details.raw-group>summary{
+    padding:13px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-bright);
+    list-style:none;display:flex;align-items:center;gap:8px;
+  }
+  details.raw-group>summary::-webkit-details-marker{display:none;}
+  details.raw-group>summary .count{font-weight:500;color:var(--text-dim);font-size:12px;}
+  .raw-group-body{padding:2px 14px 12px;border-top:1px solid var(--line);}
+
+  /* ===== MOBILE ===== */
+  @media(max-width:640px){
+    .wrap{padding:0 12px 70px;}
+    .topbar{padding:12px 12px;}
+    .title-row h1{font-size:15.5px;}
+    .subtitle{font-size:12px;}
+
+    .file-row{flex-direction:column;align-items:stretch;gap:8px;}
+    .file-row .spacer{display:none;}
+    .filename-pill{max-width:none;text-align:center;order:-1;}
+    .file-row .btn{width:100%;justify-content:center;}
+
+    .search-row{margin-top:10px;}
+    .stats-row, .toolrow{gap:6px;}
+    .stat-pill{font-size:11px;padding:4px 9px;}
+
+    .nav-arrow{width:28px;height:28px;}
+
+    .card-head{padding:12px;gap:8px;}
+    .param-name{font-size:13px;}
+    .param-help{font-size:11.5px;}
+    .card-body{padding:0 12px 14px;}
+
+    .attr-row .field-row{gap:8px;}
+    .kf-point{width:42px;}
+    .kf-swatch, .quick-swatch{width:30px;height:30px;}
+
+    .dat-row{flex-wrap:wrap;gap:6px 10px;}
+    .dat-row:not(.dat-color-row) input{flex:1;min-width:90px;}
+    .dat-color-row .kf-hex{width:80px;}
+    .dat-color-row .dat-alpha-input{width:56px;}
+
+    .attr-row .field-row{gap:8px;}
+    .attr-row .field{flex:1;min-width:100px;}
+    .attr-row input{width:100%;}
+
+    .btn{font-size:12.5px;padding:10px 14px;}
+    .mini-btn{padding:7px 11px;}
+
+    .empty-state{margin-top:36px;}
+    .empty-state h2{font-size:16px;}
+    .empty-state p{font-size:13px;}
+    .drop-target{padding:22px 14px;}
+
+    .toast{width:calc(100% - 32px);max-width:360px;text-align:center;justify-content:center;}
+  }
+
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title-row"><h1>VIsual Graphics Editor [XML-DAT]</h1></div>
+    <p class="subtitle">By Vans & Sih_Dms. Version 1</p>
+    <div class="file-row" id="fileRow" style="display:none;">
+      <span class="filename-pill" id="filenameTag">no file loaded</span>
+      <div class="spacer"></div>
+      <button class="btn" id="loadBtn2">Open another file</button>
+      <button class="btn" id="applyToFileBtn">Apply changes to another file…</button>
+      <input type="file" id="applyToFileInput" accept=".xml,.dat" style="display:none;">
+      <button class="btn primary" id="exportBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l4 4m-4-4l-4 4M5 3h14"/></svg>
+        Download
+      </button>
+    </div>
+    <div class="search-row" id="searchRow" style="display:none;">
+      <input class="search-input" id="search" placeholder="Search parameters (e.g. sky, fog, exposure)…" spellcheck="false">
+    </div>
+    <div class="nav-scroll-wrap" id="navScrollWrap" style="display:none;">
+      <button class="nav-arrow left" id="navArrowLeft" aria-label="Scroll left">&#10094;</button>
+      <div class="section-nav" id="sectionNav"></div>
+      <button class="nav-arrow right" id="navArrowRight" aria-label="Scroll right">&#10095;</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="empty-state" id="emptyState">
+    <div class="icon-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
+      </svg>
+    </div>
+    <h2>Drop Visual Graphics File to Begin</h2>
+    <p>Added support for lots of files that are responsible for the visual graphics of GTA 5</p>
+    <div class="drop-target" id="dropTarget">
+      Drag and drop file or <span class="browse-text">Browse</span>
+    </div>
+    <input type="file" id="fileInput" accept=".xml,.dat">
+  </div>
+
+  <div id="editorRoot" style="display:none;"></div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- CONSTANTS ----------
+  const HOURS = [0, 5, 6, 7, 8, 9, 13, 17, 18, 19, 20, 21, 22];
+  const PARAMS = [{"key": "sky_top", "section": "Sky", "name": "Sky color (top)", "help": "The color of the sky directly overhead.", "type": "color", "tags": ["sky_zenith_col_r", "sky_zenith_col_g", "sky_zenith_col_b"]}, {"key": "sky_top_intensity", "section": "Sky", "name": "Sky brightness (top)", "help": "How bright the overhead sky glows.", "type": "slider", "tag": "sky_zenith_col_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_top_transition", "section": "Sky", "name": "Sky color (top blend)", "help": "Blend color used where the top sky transitions to the horizon.", "type": "color", "tags": ["sky_zenith_transition_col_r", "sky_zenith_transition_col_g", "sky_zenith_transition_col_b"]}, {"key": "sky_top_transition_intensity", "section": "Sky", "name": "Sky brightness (top blend)", "help": "Brightness of that top transition blend.", "type": "slider", "tag": "sky_zenith_transition_col_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_horizon_east", "section": "Sky", "name": "Sky color (east horizon)", "help": "The color of the sky near the horizon, sun-rise side.", "type": "color", "tags": ["sky_azimuth_east_col_r", "sky_azimuth_east_col_g", "sky_azimuth_east_col_b"]}, {"key": "sky_horizon_east_intensity", "section": "Sky", "name": "Sky brightness (east horizon)", "help": "Brightness of the east horizon color.", "type": "slider", "tag": "sky_azimuth_east_col_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_horizon_west", "section": "Sky", "name": "Sky color (west horizon)", "help": "The color of the sky near the horizon, sun-set side.", "type": "color", "tags": ["sky_azimuth_west_col_r", "sky_azimuth_west_col_g", "sky_azimuth_west_col_b"]}, {"key": "sky_horizon_west_intensity", "section": "Sky", "name": "Sky brightness (west horizon)", "help": "Brightness of the west horizon color.", "type": "slider", "tag": "sky_azimuth_west_col_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_horizon_transition", "section": "Sky", "name": "Sky color (horizon blend)", "help": "Color used where east and west horizon blends meet.", "type": "color", "tags": ["sky_azimuth_transition_col_r", "sky_azimuth_transition_col_g", "sky_azimuth_transition_col_b"]}, {"key": "sky_horizon_transition_intensity", "section": "Sky", "name": "Sky brightness (horizon blend)", "help": "Brightness of that horizon blend color.", "type": "slider", "tag": "sky_azimuth_transition_col_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_hdr", "section": "Sky", "name": "Sky HDR multiplier", "help": "Overall HDR intensity boost applied to the whole sky.", "type": "slider", "tag": "sky_hdr", "min": 0, "max": 10, "step": 0.1}, {"key": "sky_plane", "section": "Sky", "name": "Sky plane color", "help": "Color of the distant flat sky plane (visible on the horizon at extreme distance).", "type": "color", "tags": ["sky_plane_r", "sky_plane_g", "sky_plane_b"]}, {"key": "sky_plane_intensity", "section": "Sky", "name": "Sky plane brightness", "help": "Brightness of the distant sky plane.", "type": "slider", "tag": "sky_plane_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sky_stars", "section": "Sky", "name": "Star brightness", "help": "How visible stars are at night.", "type": "slider", "tag": "sky_stars_iten", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_base", "section": "Clouds", "name": "Cloud color (lit)", "help": "The color of clouds where sunlight hits them.", "type": "color", "tags": ["sky_cloud_base_col_r", "sky_cloud_base_col_g", "sky_cloud_base_col_b"]}, {"key": "cloud_base_strength", "section": "Clouds", "name": "Cloud lit strength", "help": "How strongly the lit cloud color shows.", "type": "slider", "tag": "sky_cloud_base_strength", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_mid", "section": "Clouds", "name": "Cloud color (mid-tone)", "help": "The mid-tone color of clouds, between lit and shadowed.", "type": "color", "tags": ["sky_cloud_mid_col_r", "sky_cloud_mid_col_g", "sky_cloud_mid_col_b"]}, {"key": "cloud_shadow_col", "section": "Clouds", "name": "Cloud color (shadowed)", "help": "The color of clouds in shadow.", "type": "color", "tags": ["sky_cloud_shadow_col_r", "sky_cloud_shadow_col_g", "sky_cloud_shadow_col_b"]}, {"key": "cloud_shadow_strength", "section": "Clouds", "name": "Cloud shadow strength", "help": "How strongly the cloud shadow color shows.", "type": "slider", "tag": "sky_cloud_shadow_strength", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_small", "section": "Clouds", "name": "Small cloud color", "help": "The color of the small, high-detail cloud layer.", "type": "color", "tags": ["sky_small_cloud_col_r", "sky_small_cloud_col_g", "sky_small_cloud_col_b"]}, {"key": "cloud_small_detail_strength", "section": "Clouds", "name": "Small cloud detail strength", "help": "How strongly small cloud detail shows.", "type": "slider", "tag": "sky_small_cloud_detail_strength", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_small_detail_scale", "section": "Clouds", "name": "Small cloud detail scale", "help": "The size of small cloud detail texture.", "type": "slider", "tag": "sky_small_cloud_detail_scale", "min": 0, "max": 20, "step": 0.1}, {"key": "cloud_small_density_mult", "section": "Clouds", "name": "Small cloud density", "help": "How much small cloud cover there is.", "type": "slider", "tag": "sky_small_cloud_density_mult", "min": 0, "max": 2, "step": 0.01}, {"key": "cloud_small_density_bias", "section": "Clouds", "name": "Small cloud density bias", "help": "Shifts small cloud density up or down.", "type": "slider", "tag": "sky_small_cloud_density_bias", "min": -1, "max": 1, "step": 0.01}, {"key": "cloud_density_mult", "section": "Clouds", "name": "Cloud density", "help": "How much overall cloud cover there is.", "type": "slider", "tag": "sky_cloud_density_mult", "min": 0, "max": 2, "step": 0.01}, {"key": "cloud_density_bias", "section": "Clouds", "name": "Cloud density bias", "help": "Shifts overall cloud density up or down.", "type": "slider", "tag": "sky_cloud_density_bias", "min": -1, "max": 1, "step": 0.01}, {"key": "cloud_gen_threshold", "section": "Clouds", "name": "Cloud coverage threshold", "help": "Controls how much of the sky clouds cover, generation-side.", "type": "slider", "tag": "sky_cloud_gen_threshold", "min": 0, "max": 1, "step": 0.01}, {"key": "cloud_gen_frequency", "section": "Clouds", "name": "Cloud noise frequency", "help": "How much fine detail appears in cloud shapes.", "type": "slider", "tag": "sky_cloud_gen_frequency", "min": 0, "max": 10, "step": 0.05}, {"key": "cloud_gen_scale", "section": "Clouds", "name": "Cloud noise scale", "help": "The overall size of cloud formations.", "type": "slider", "tag": "sky_cloud_gen_scale", "min": 0, "max": 10, "step": 0.05}, {"key": "cloud_gen_softness", "section": "Clouds", "name": "Cloud edge softness", "help": "How soft or hard cloud edges look.", "type": "slider", "tag": "sky_cloud_gen_softness", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_overall_strength", "section": "Clouds", "name": "Overall cloud strength", "help": "A master strength dial for all clouds.", "type": "slider", "tag": "sky_cloud_overall_strength", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_overall_color", "section": "Clouds", "name": "Overall cloud tint", "help": "A master color/tint dial for all clouds.", "type": "slider", "tag": "sky_cloud_overall_color", "min": 0, "max": 2, "step": 0.01}, {"key": "cloud_edge_strength", "section": "Clouds", "name": "Cloud edge highlight", "help": "Strength of bright edges on clouds (sun-facing rim light).", "type": "slider", "tag": "sky_cloud_edge_strength", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_fadeout", "section": "Clouds", "name": "Cloud distance fadeout", "help": "How quickly clouds fade out toward the horizon.", "type": "slider", "tag": "sky_cloud_fadeout", "min": 0, "max": 1, "step": 0.01}, {"key": "cloud_hdr", "section": "Clouds", "name": "Cloud HDR multiplier", "help": "Overall HDR intensity boost applied to clouds.", "type": "slider", "tag": "sky_cloud_hdr", "min": 0, "max": 10, "step": 0.1}, {"key": "cloud_dither", "section": "Clouds", "name": "Cloud dither strength", "help": "Reduces banding artifacts in cloud gradients.", "type": "slider", "tag": "sky_cloud_dither_strength", "min": 0, "max": 2, "step": 0.01}, {"key": "cloud_offset", "section": "Clouds", "name": "Cloud vertical offset", "help": "Shifts the cloud layer's altitude.", "type": "slider", "tag": "sky_cloud_offset", "min": -1, "max": 1, "step": 0.01}, {"key": "cloud_ground_shadow_density", "section": "Clouds", "name": "Ground cloud shadow density", "help": "How dark the moving cloud shadows on the ground are.", "type": "slider", "tag": "cloud_shadow_density", "min": 0, "max": 1, "step": 0.01}, {"key": "cloud_ground_shadow_softness", "section": "Clouds", "name": "Ground cloud shadow softness", "help": "How soft-edged the ground cloud shadows are.", "type": "slider", "tag": "cloud_shadow_softness", "min": 0, "max": 5, "step": 0.05}, {"key": "cloud_ground_shadow_opacity", "section": "Clouds", "name": "Ground cloud shadow opacity", "help": "How visible the ground cloud shadows are.", "type": "slider", "tag": "cloud_shadow_opacity", "min": 0, "max": 1, "step": 0.01}, {"key": "sun_color", "section": "Sun & moon", "name": "Sun color", "help": "The tint of sunlight scattered across the sky.", "type": "color", "tags": ["sky_sun_col_r", "sky_sun_col_g", "sky_sun_col_b"]}, {"key": "sun_glow_color", "section": "Sun & moon", "name": "Sun glow color", "help": "The color of the glowing disc of the sun itself.", "type": "color", "tags": ["sky_sun_disc_col_r", "sky_sun_disc_col_g", "sky_sun_disc_col_b"]}, {"key": "sun_size", "section": "Sun & moon", "name": "Sun size", "help": "How large the sun disc appears.", "type": "slider", "tag": "sky_sun_disc_size", "min": 0, "max": 5, "step": 0.05}, {"key": "sun_glow_strength", "section": "Sun & moon", "name": "Sun glow strength", "help": "How intensely the sun glows.", "type": "slider", "tag": "sky_sun_hdr", "min": 0, "max": 5, "step": 0.05}, {"key": "sun_scatter", "section": "Sun & moon", "name": "Sun scatter intensity", "help": "How much the sun's light scatters through the atmosphere.", "type": "slider", "tag": "sky_sun_scatter_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "sun_mie_phase", "section": "Sun & moon", "name": "Sun haze shape", "help": "Shapes the sun's atmospheric haze halo.", "type": "slider", "tag": "sky_sun_miephase", "min": 0, "max": 1, "step": 0.01}, {"key": "sun_mie_scatter", "section": "Sun & moon", "name": "Sun haze scatter", "help": "How much atmospheric haze scatters around the sun.", "type": "slider", "tag": "sky_sun_miescatter", "min": 0, "max": 1, "step": 0.01}, {"key": "sun_mie_mult", "section": "Sun & moon", "name": "Sun haze intensity", "help": "Overall intensity of the sun's atmospheric haze.", "type": "slider", "tag": "sky_sun_mie_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "sun_influence_radius", "section": "Sun & moon", "name": "Sun glow radius", "help": "How far the sun's glow spreads across the sky.", "type": "slider", "tag": "sky_sun_influence_radius", "min": 0, "max": 200, "step": 1}, {"key": "moon_color", "section": "Sun & moon", "name": "Moon color", "help": "The tint of moonlight at night.", "type": "color", "tags": ["sky_moon_col_r", "sky_moon_col_g", "sky_moon_col_b"]}, {"key": "moon_size", "section": "Sun & moon", "name": "Moon size", "help": "How large the moon disc appears.", "type": "slider", "tag": "sky_moon_disc_size", "min": 0, "max": 5, "step": 0.05}, {"key": "moon_glow_strength", "section": "Sun & moon", "name": "Moon glow strength", "help": "How intensely the moon glows.", "type": "slider", "tag": "sky_moon_hdr", "min": 0, "max": 5, "step": 0.05}, {"key": "moon_intensity", "section": "Sun & moon", "name": "Moon brightness", "help": "Overall brightness of the moon disc.", "type": "slider", "tag": "sky_moon_iten", "min": 0, "max": 5, "step": 0.05}, {"key": "moon_scatter", "section": "Sun & moon", "name": "Moon scatter intensity", "help": "How much moonlight scatters through the atmosphere.", "type": "slider", "tag": "sky_moon_scatter_inten", "min": 0, "max": 5, "step": 0.05}, {"key": "moon_influence_radius", "section": "Sun & moon", "name": "Moon glow radius", "help": "How far the moon's glow spreads across the sky.", "type": "slider", "tag": "sky_moon_influence_radius", "min": 0, "max": 200, "step": 1}, {"key": "fog_color", "section": "Fog", "name": "Fog color", "help": "The color of distant haze and fog.", "type": "color", "tags": ["fog_col_r", "fog_col_g", "fog_col_b"]}, {"key": "fog_alpha_main", "section": "Fog", "name": "Fog opacity", "help": "How opaque the main fog color is.", "type": "slider", "tag": "fog_col_a", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_near_color", "section": "Fog", "name": "Fog color (near)", "help": "The color of fog close to the camera.", "type": "color", "tags": ["fog_near_col_r", "fog_near_col_g", "fog_near_col_b"]}, {"key": "fog_near_alpha", "section": "Fog", "name": "Near fog opacity", "help": "How opaque the near fog color is.", "type": "slider", "tag": "fog_near_col_a", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_east_color", "section": "Fog", "name": "Fog color (sunrise side)", "help": "The tint of fog on the sunrise/east side of the sky.", "type": "color", "tags": ["fog_east_col_r", "fog_east_col_g", "fog_east_col_b"]}, {"key": "fog_east_alpha", "section": "Fog", "name": "Sunrise fog opacity", "help": "How opaque the sunrise-side fog tint is.", "type": "slider", "tag": "fog_east_col_a", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_moon_color", "section": "Fog", "name": "Fog color (moonlit)", "help": "The tint of fog under moonlight.", "type": "color", "tags": ["fog_moon_col_r", "fog_moon_col_g", "fog_moon_col_b"]}, {"key": "fog_moon_alpha", "section": "Fog", "name": "Moonlit fog opacity", "help": "How opaque the moonlit fog tint is.", "type": "slider", "tag": "fog_moon_col_a", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_haze_color", "section": "Fog", "name": "Haze color", "help": "The color of low-lying atmospheric haze.", "type": "color", "tags": ["fog_haze_col_r", "fog_haze_col_g", "fog_haze_col_b"]}, {"key": "fog_haze_density", "section": "Fog", "name": "Haze density", "help": "How thick the low-lying haze looks.", "type": "slider", "tag": "fog_haze_density", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_haze_alpha", "section": "Fog", "name": "Haze opacity", "help": "How opaque the haze color is.", "type": "slider", "tag": "fog_haze_alpha", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_haze_start", "section": "Fog", "name": "Haze start distance", "help": "How far away haze begins to appear.", "type": "slider", "tag": "fog_haze_start", "min": 0, "max": 200, "step": 1}, {"key": "fog_haze_hdr", "section": "Fog", "name": "Haze HDR multiplier", "help": "HDR intensity boost applied to haze.", "type": "slider", "tag": "fog_haze_hdr", "min": 0, "max": 10, "step": 0.1}, {"key": "fog_thickness", "section": "Fog", "name": "Fog thickness", "help": "How dense the fog looks. Higher hides things sooner.", "type": "slider", "tag": "fog_density", "min": 0, "max": 0.1, "step": 0.001}, {"key": "fog_start", "section": "Fog", "name": "Fog start distance", "help": "How far away fog begins to appear.", "type": "slider", "tag": "fog_start", "min": 0, "max": 200, "step": 1}, {"key": "fog_falloff", "section": "Fog", "name": "Fog height falloff", "help": "How quickly fog thins out with altitude.", "type": "slider", "tag": "fog_falloff", "min": 0, "max": 20, "step": 0.1}, {"key": "fog_base_height", "section": "Fog", "name": "Fog base height", "help": "The ground height fog is calculated from.", "type": "slider", "tag": "fog_base_height", "min": -500, "max": 500, "step": 1}, {"key": "fog_cut_off", "section": "Fog", "name": "Fog cutoff distance", "help": "Distance beyond which fog is no longer drawn.", "type": "slider", "tag": "fog_cut_off", "min": 0, "max": 20000, "step": 10}, {"key": "fog_hdr", "section": "Fog", "name": "Fog HDR multiplier", "help": "HDR intensity boost applied to fog.", "type": "slider", "tag": "fog_hdr", "min": 0, "max": 10, "step": 0.1}, {"key": "fog_horizon_tint", "section": "Fog", "name": "Fog horizon tint", "help": "How much fog tints the horizon color.", "type": "slider", "tag": "fog_horizon_tint_scale", "min": 0, "max": 5, "step": 0.05}, {"key": "fog_shadow_amount", "section": "Fog", "name": "Fog shadowing amount", "help": "How much shadows darken the fog.", "type": "slider", "tag": "fog_shadow_amount", "min": 0, "max": 1, "step": 0.01}, {"key": "fog_shadow_falloff", "section": "Fog", "name": "Fog shadow falloff", "help": "How quickly fog shadowing fades with height.", "type": "slider", "tag": "fog_shadow_falloff", "min": 0, "max": 20, "step": 0.1}, {"key": "fogray_intensity", "section": "Fog", "name": "God ray intensity", "help": "How bright light shafts through fog appear.", "type": "slider", "tag": "fogray_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "fogray_density", "section": "Fog", "name": "God ray density", "help": "How dense fog light shafts look.", "type": "slider", "tag": "fogray_density", "min": 0, "max": 5, "step": 0.05}, {"key": "fogray_contrast", "section": "Fog", "name": "God ray contrast", "help": "Contrast of fog light shafts.", "type": "slider", "tag": "fogray_contrast", "min": 0, "max": 5, "step": 0.05}, {"key": "fogvolume_density", "section": "Fog", "name": "Volumetric fog density", "help": "Density of ground-hugging volumetric fog.", "type": "slider", "tag": "fogvolume_density_scalar", "min": 0, "max": 5, "step": 0.05}, {"key": "fogvolume_density_interior", "section": "Fog", "name": "Volumetric fog density (interior)", "help": "Density of volumetric fog while indoors.", "type": "slider", "tag": "fogvolume_density_scalar_interior", "min": 0, "max": 5, "step": 0.05}, {"key": "fog_volume_light_intensity", "section": "Fog", "name": "Streetlight fog glow intensity", "help": "How strong the misty halo around individual light sources (streetlights, windows) looks \u2014 mainly visible at night.", "type": "slider", "tag": "fog_volume_light_intensity", "min": 0, "max": 1, "step": 0.001}, {"key": "fog_volume_light_size", "section": "Fog", "name": "Streetlight fog glow size", "help": "How big that misty halo around each light source appears.", "type": "slider", "tag": "fog_volume_light_size", "min": 0, "max": 2, "step": 0.01}, {"key": "fog_volume_light_range", "section": "Fog", "name": "Streetlight fog glow range", "help": "How far from the light source the glow reaches before fading out.", "type": "slider", "tag": "fog_volume_light_range", "min": 0, "max": 500, "step": 1}, {"key": "fog_volume_light_fade", "section": "Fog", "name": "Streetlight fog glow fade", "help": "How gradually the glow fades out at the edge of its range.", "type": "slider", "tag": "fog_volume_light_fade", "min": 0, "max": 500, "step": 1}, {"key": "sunlight_color", "section": "Light", "name": "Sunlight color", "help": "The color cast by direct sunlight on the world.", "type": "color", "tags": ["light_dir_col_r", "light_dir_col_g", "light_dir_col_b"]}, {"key": "sunlight_brightness", "section": "Light", "name": "Sunlight brightness", "help": "How strong direct sunlight is.", "type": "slider", "tag": "light_dir_mult", "min": 0, "max": 15, "step": 0.1}, {"key": "ambient_color", "section": "Light", "name": "Ambient light color", "help": "The color of soft, indirect light everywhere (shadows, indoors).", "type": "color", "tags": ["light_directional_amb_col_r", "light_directional_amb_col_g", "light_directional_amb_col_b"]}, {"key": "ambient_brightness", "section": "Light", "name": "Ambient light brightness", "help": "How strong that soft, indirect light is.", "type": "slider", "tag": "light_directional_amb_intensity", "min": 0, "max": 1, "step": 0.01}, {"key": "ambient_brightness_mult", "section": "Light", "name": "Ambient light multiplier", "help": "An extra multiplier on top of ambient brightness.", "type": "slider", "tag": "light_directional_amb_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "amb_down_color", "section": "Light", "name": "Sky ambient color (down-facing)", "help": "The color of ambient light falling on downward-facing surfaces.", "type": "color", "tags": ["light_natural_amb_down_col_r", "light_natural_amb_down_col_g", "light_natural_amb_down_col_b"]}, {"key": "amb_down_intensity", "section": "Light", "name": "Sky ambient brightness (down)", "help": "Brightness of ambient light on downward-facing surfaces.", "type": "slider", "tag": "light_natural_amb_down_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "amb_up_color", "section": "Light", "name": "Sky ambient color (up-facing)", "help": "The color of ambient light falling on upward-facing surfaces (bounced from the ground).", "type": "color", "tags": ["light_natural_amb_up_col_r", "light_natural_amb_up_col_g", "light_natural_amb_up_col_b"]}, {"key": "amb_up_intensity", "section": "Light", "name": "Sky ambient brightness (up)", "help": "Brightness of ambient light on upward-facing surfaces.", "type": "slider", "tag": "light_natural_amb_up_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "amb_up_intensity_mult", "section": "Light", "name": "Sky ambient multiplier (up)", "help": "An extra multiplier on the up-facing ambient light.", "type": "slider", "tag": "light_natural_amb_up_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "amb_down_wrap", "section": "Light", "name": "Ambient wrap", "help": "How far ambient light wraps around the edges of surfaces.", "type": "slider", "tag": "light_amb_down_wrap", "min": 0, "max": 1, "step": 0.01}, {"key": "natural_push", "section": "Light", "name": "Natural light push", "help": "Pushes natural ambient light bias toward a chosen direction.", "type": "slider", "tag": "light_natural_push", "min": -2, "max": 2, "step": 0.02}, {"key": "natural_ambient_mult", "section": "Light", "name": "Natural ambient multiplier", "help": "A global multiplier over all natural ambient light.", "type": "slider", "tag": "natural_ambient_multiplier", "min": 0, "max": 5, "step": 0.05}, {"key": "artificial_int_down_color", "section": "Light", "name": "Interior light color (down)", "help": "Color of artificial interior lighting on downward-facing surfaces.", "type": "color", "tags": ["light_artificial_int_down_col_r", "light_artificial_int_down_col_g", "light_artificial_int_down_col_b"]}, {"key": "artificial_int_down_intensity", "section": "Light", "name": "Interior light brightness (down)", "help": "Brightness of artificial interior lighting, downward.", "type": "slider", "tag": "light_artificial_int_down_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "artificial_int_up_color", "section": "Light", "name": "Interior light color (up)", "help": "Color of artificial interior lighting on upward-facing surfaces.", "type": "color", "tags": ["light_artificial_int_up_col_r", "light_artificial_int_up_col_g", "light_artificial_int_up_col_b"]}, {"key": "artificial_int_up_intensity", "section": "Light", "name": "Interior light brightness (up)", "help": "Brightness of artificial interior lighting, upward.", "type": "slider", "tag": "light_artificial_int_up_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "artificial_ext_down_color", "section": "Light", "name": "Exterior light color (down)", "help": "Color of artificial street/exterior lighting, downward.", "type": "color", "tags": ["light_artificial_ext_down_col_r", "light_artificial_ext_down_col_g", "light_artificial_ext_down_col_b"]}, {"key": "artificial_ext_down_intensity", "section": "Light", "name": "Exterior light brightness (down)", "help": "Brightness of artificial street/exterior lighting, downward.", "type": "slider", "tag": "light_artificial_ext_down_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "artificial_ext_up_color", "section": "Light", "name": "Exterior light color (up)", "help": "Color of artificial street/exterior lighting, upward.", "type": "color", "tags": ["light_artificial_ext_up_col_r", "light_artificial_ext_up_col_g", "light_artificial_ext_up_col_b"]}, {"key": "artificial_ext_up_intensity", "section": "Light", "name": "Exterior light brightness (up)", "help": "Brightness of artificial street/exterior lighting, upward.", "type": "slider", "tag": "light_artificial_ext_up_intensity", "min": 0, "max": 3, "step": 0.02}, {"key": "artificial_int_ambient_mult", "section": "Light", "name": "Interior ambient multiplier", "help": "A global multiplier over interior artificial ambient light.", "type": "slider", "tag": "artificial_int_ambient_multiplier", "min": 0, "max": 5, "step": 0.05}, {"key": "ped_light_color", "section": "Light", "name": "Ped light color", "help": "The tint of the fill light applied to pedestrians and players.", "type": "color", "tags": ["ped_light_col_r", "ped_light_col_g", "ped_light_col_b"]}, {"key": "ped_light_mult", "section": "Light", "name": "Ped light brightness", "help": "Brightness of the fill light on pedestrians and players.", "type": "slider", "tag": "ped_light_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "amb_occ_mult", "section": "Light", "name": "Ambient occlusion strength", "help": "How strongly ambient occlusion darkens contact shadows.", "type": "slider", "tag": "light_amb_occ_mult", "min": 0, "max": 2, "step": 0.01}, {"key": "amb_occ_mult_ped", "section": "Light", "name": "Ambient occlusion strength (peds)", "help": "Ambient occlusion strength applied specifically to peds.", "type": "slider", "tag": "light_amb_occ_mult_ped", "min": 0, "max": 2, "step": 0.01}, {"key": "amb_occ_mult_veh", "section": "Light", "name": "Ambient occlusion strength (vehicles)", "help": "Ambient occlusion strength applied specifically to vehicles.", "type": "slider", "tag": "light_amb_occ_mult_veh", "min": 0, "max": 2, "step": 0.01}, {"key": "light_ray_color", "section": "Light", "name": "Light shaft (god ray) color", "help": "The color of visible light shafts (crepuscular rays).", "type": "color", "tags": ["light_ray_col_r", "light_ray_col_g", "light_ray_col_b"]}, {"key": "light_ray_mult", "section": "Light", "name": "Light shaft intensity", "help": "How bright visible light shafts are.", "type": "slider", "tag": "light_ray_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "light_ray_dist", "section": "Light", "name": "Light shaft distance", "help": "How far light shafts extend.", "type": "slider", "tag": "light_ray_dist", "min": 0, "max": 200, "step": 1}, {"key": "reflection_quality", "section": "Reflections", "name": "Reflection quality", "help": "Overall quality level of screen reflections.", "type": "slider", "tag": "reflection_quality", "min": 0, "max": 2, "step": 0.01}, {"key": "reflection_tweak_interior_amb", "section": "Reflections", "name": "Reflection ambient tweak (interior)", "help": "Adjusts ambient light contribution to reflections indoors.", "type": "slider", "tag": "reflection_tweak_interior_amb", "min": 0, "max": 5, "step": 0.05}, {"key": "reflection_tweak_exterior_amb", "section": "Reflections", "name": "Reflection ambient tweak (exterior)", "help": "Adjusts ambient light contribution to reflections outdoors.", "type": "slider", "tag": "reflection_tweak_exterior_amb", "min": 0, "max": 5, "step": 0.05}, {"key": "reflection_tweak_emissive", "section": "Reflections", "name": "Reflection emissive tweak", "help": "Adjusts how strongly emissive (glowing) surfaces show in reflections.", "type": "slider", "tag": "reflection_tweak_emissive", "min": 0, "max": 5, "step": 0.05}, {"key": "reflection_tweak_directional", "section": "Reflections", "name": "Reflection sunlight tweak", "help": "Adjusts how strongly direct sunlight shows in reflections.", "type": "slider", "tag": "reflection_tweak_directional", "min": 0, "max": 5, "step": 0.05}, {"key": "reflection_hdr_mult", "section": "Reflections", "name": "Reflection HDR multiplier", "help": "HDR intensity boost applied to reflections.", "type": "slider", "tag": "reflection_hdr_mult", "min": 0, "max": 10, "step": 0.1}, {"key": "mirror_reflection_intensity", "section": "Reflections", "name": "Mirror local-light intensity", "help": "Brightness of local lights (streetlights etc.) shown in mirrors.", "type": "slider", "tag": "mirror_reflection_local_light_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "water_reflection_mult", "section": "Water", "name": "Water reflection strength", "help": "How strong reflections on water are.", "type": "slider", "tag": "water_reflection", "min": 0, "max": 2, "step": 0.01}, {"key": "water_reflection_sky_mult", "section": "Water", "name": "Water sky reflection strength", "help": "How strongly the sky reflects on water.", "type": "slider", "tag": "water_reflection_sky_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "water_reflection_distant_light", "section": "Water", "name": "Water distant-light reflection", "help": "How strongly distant lights reflect on water.", "type": "slider", "tag": "water_reflection_distant_light_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "water_reflection_corona_intensity", "section": "Water", "name": "Water corona reflection", "help": "How strongly light coronas reflect on water.", "type": "slider", "tag": "water_reflection_corona_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "water_foam_intensity", "section": "Water", "name": "Water foam intensity", "help": "How visible white foam/wave-caps are.", "type": "slider", "tag": "water_foam_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "water_specular_intensity", "section": "Water", "name": "Water specular highlight", "help": "How sharp and bright specular sun-glints on water are.", "type": "slider", "tag": "water_specular_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "water_drying_speed", "section": "Water", "name": "Wet-surface drying speed", "help": "How quickly wet surfaces dry after rain.", "type": "slider", "tag": "water_drying_speed_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "dof_far", "section": "DOF & lens", "name": "Depth of field distance", "help": "Distance where background blur (DOF) begins.", "type": "slider", "tag": "dof_far", "min": 0, "max": 500, "step": 1}, {"key": "dof_blur_mid", "section": "DOF & lens", "name": "DOF mid blur amount", "help": "Amount of blur at medium distance.", "type": "slider", "tag": "dof_blur_mid", "min": 0, "max": 5, "step": 0.05}, {"key": "dof_blur_far", "section": "DOF & lens", "name": "DOF far blur amount", "help": "Amount of blur at far distance.", "type": "slider", "tag": "dof_blur_far", "min": 0, "max": 5, "step": 0.05}, {"key": "environmental_blur_size", "section": "DOF & lens", "name": "Environmental blur size", "help": "Size of the ambient environmental blur effect.", "type": "slider", "tag": "environmental_blur_size", "min": 0, "max": 5, "step": 0.05}, {"key": "bokeh_brightness_min", "section": "DOF & lens", "name": "Bokeh brightness (min)", "help": "Minimum brightness threshold for bokeh highlights.", "type": "slider", "tag": "bokeh_brightness_min", "min": 0, "max": 5, "step": 0.05}, {"key": "bokeh_brightness_max", "section": "DOF & lens", "name": "Bokeh brightness (max)", "help": "Maximum brightness threshold for bokeh highlights.", "type": "slider", "tag": "bokeh_brightness_max", "min": 0, "max": 5, "step": 0.05}, {"key": "lens_dist_coeff", "section": "DOF & lens", "name": "Lens distortion", "help": "How much the image bows/distorts like a camera lens.", "type": "slider", "tag": "lens_dist_coeff", "min": -2, "max": 2, "step": 0.01}, {"key": "chrom_aberration", "section": "DOF & lens", "name": "Chromatic aberration", "help": "Color-fringing strength at the edges of the screen.", "type": "slider", "tag": "chrom_aberration_coeff", "min": 0, "max": 2, "step": 0.01}, {"key": "lens_artefacts_intensity", "section": "DOF & lens", "name": "Lens flare artefacts", "help": "Intensity of lens-flare style artefacts.", "type": "slider", "tag": "lens_artefacts_intensity", "min": 0, "max": 5, "step": 0.05}, {"key": "blur_vignetting_intensity", "section": "DOF & lens", "name": "Blur vignette intensity", "help": "How strongly the screen edges blur (vignette blur).", "type": "slider", "tag": "blur_vignetting_intensity", "min": 0, "max": 2, "step": 0.01}, {"key": "blur_vignetting_radius", "section": "DOF & lens", "name": "Blur vignette radius", "help": "How far the blur vignette reaches toward the center.", "type": "slider", "tag": "blur_vignetting_radius", "min": 0, "max": 2, "step": 0.01}, {"key": "screen_blur_intensity", "section": "DOF & lens", "name": "Screen blur intensity", "help": "Overall full-screen blur intensity.", "type": "slider", "tag": "screen_blur_intensity", "min": 0, "max": 2, "step": 0.01}, {"key": "postfx_exposure", "section": "Post FX", "name": "Exposure", "help": "Overall scene brightness (camera exposure).", "type": "slider", "tag": "postfx_exposure", "min": -5, "max": 5, "step": 0.02}, {"key": "postfx_exposure_min", "section": "Post FX", "name": "Exposure (minimum)", "help": "Minimum auto-exposure value.", "type": "slider", "tag": "postfx_exposure_min", "min": -5, "max": 5, "step": 0.02}, {"key": "postfx_exposure_max", "section": "Post FX", "name": "Exposure (maximum)", "help": "Maximum auto-exposure value.", "type": "slider", "tag": "postfx_exposure_max", "min": -5, "max": 5, "step": 0.02}, {"key": "postfx_intensity_bloom", "section": "Post FX", "name": "Bloom intensity", "help": "How much bright areas glow/bloom.", "type": "slider", "tag": "postfx_intensity_bloom", "min": 0, "max": 3, "step": 0.01}, {"key": "postfx_bright_pass_thresh", "section": "Post FX", "name": "Bloom brightness threshold", "help": "Brightness level required before bloom kicks in.", "type": "slider", "tag": "postfx_bright_pass_thresh", "min": 0, "max": 5, "step": 0.02}, {"key": "postfx_correct_color", "section": "Post FX", "name": "Color correction tint", "help": "A color tint applied to brighter areas of the image.", "type": "color", "tags": ["postfx_correct_col_r", "postfx_correct_col_g", "postfx_correct_col_b"]}, {"key": "postfx_shift_color", "section": "Post FX", "name": "Color shift tint", "help": "A color tint shift applied above a cutoff brightness.", "type": "color", "tags": ["postfx_shift_col_r", "postfx_shift_col_g", "postfx_shift_col_b"]}, {"key": "postfx_desaturation", "section": "Post FX", "name": "Desaturation", "help": "How much color is drained from the scene.", "type": "slider", "tag": "postfx_desaturation", "min": 0, "max": 1, "step": 0.01}, {"key": "postfx_noise", "section": "Post FX", "name": "Film grain / noise", "help": "How much film-grain noise is added.", "type": "slider", "tag": "postfx_noise", "min": 0, "max": 1, "step": 0.01}, {"key": "postfx_vignetting_intensity", "section": "Post FX", "name": "Screen vignette intensity", "help": "How much the screen edges darken.", "type": "slider", "tag": "postfx_vignetting_intensity", "min": 0, "max": 2, "step": 0.01}, {"key": "postfx_vignetting_radius", "section": "Post FX", "name": "Screen vignette radius", "help": "How far the screen vignette reaches toward the center.", "type": "slider", "tag": "postfx_vignetting_radius", "min": 0, "max": 2, "step": 0.01}, {"key": "postfx_vignetting_contrast", "section": "Post FX", "name": "Screen vignette contrast", "help": "Contrast/sharpness of the vignette edge.", "type": "slider", "tag": "postfx_vignetting_contrast", "min": 0, "max": 5, "step": 0.02}, {"key": "postfx_vignetting_color", "section": "Post FX", "name": "Screen vignette color", "help": "The color of the screen-edge vignette.", "type": "color", "tags": ["postfx_vignetting_col_r", "postfx_vignetting_col_g", "postfx_vignetting_col_b"]}, {"key": "postfx_grad_top", "section": "Post FX", "name": "Gradient filter (top)", "help": "A color grading gradient applied to the top of the screen.", "type": "color", "tags": ["postfx_grad_top_col_r", "postfx_grad_top_col_g", "postfx_grad_top_col_b"]}, {"key": "postfx_grad_middle", "section": "Post FX", "name": "Gradient filter (middle)", "help": "A color grading gradient applied to the middle of the screen.", "type": "color", "tags": ["postfx_grad_middle_col_r", "postfx_grad_middle_col_g", "postfx_grad_middle_col_b"]}, {"key": "postfx_grad_bottom", "section": "Post FX", "name": "Gradient filter (bottom)", "help": "A color grading gradient applied to the bottom of the screen.", "type": "color", "tags": ["postfx_grad_bottom_col_r", "postfx_grad_bottom_col_g", "postfx_grad_bottom_col_b"]}, {"key": "nv_light_dir_mult", "section": "Night vision", "name": "NV sunlight multiplier", "help": "How much direct light affects night vision brightness.", "type": "slider", "tag": "nv_light_dir_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "nv_lowLum", "section": "Night vision", "name": "NV low-light response", "help": "How night vision responds in very dark areas.", "type": "slider", "tag": "nv_lowLum", "min": 0, "max": 5, "step": 0.05}, {"key": "nv_highLum", "section": "Night vision", "name": "NV high-light response", "help": "How night vision responds in bright areas.", "type": "slider", "tag": "nv_highLum", "min": 0, "max": 5, "step": 0.05}, {"key": "nv_color", "section": "Night vision", "name": "NV tint color", "help": "The overall color tint of the night vision effect.", "type": "color", "tags": ["nv_colorLum_r", "nv_colorLum_g", "nv_colorLum_b"]}, {"key": "nv_bloomLum", "section": "Night vision", "name": "NV bloom", "help": "How much bright light sources bloom under night vision.", "type": "slider", "tag": "nv_bloomLum", "min": 0, "max": 5, "step": 0.05}, {"key": "nv_noiseLum", "section": "Night vision", "name": "NV noise/grain", "help": "How much static noise/grain the night vision effect has.", "type": "slider", "tag": "nv_noiseLum", "min": 0, "max": 5, "step": 0.05}, {"key": "hh_startRange", "section": "Heat haze", "name": "Heat haze start distance", "help": "Distance where the heat-shimmer effect begins.", "type": "slider", "tag": "hh_startRange", "min": 0, "max": 200, "step": 1}, {"key": "hh_farRange", "section": "Heat haze", "name": "Heat haze end distance", "help": "Distance where the heat-shimmer effect fully fades.", "type": "slider", "tag": "hh_farRange", "min": 0, "max": 500, "step": 1}, {"key": "hh_minIntensity", "section": "Heat haze", "name": "Heat haze min intensity", "help": "The weakest strength of the heat-shimmer effect.", "type": "slider", "tag": "hh_minIntensity", "min": 0, "max": 2, "step": 0.01}, {"key": "hh_maxIntensity", "section": "Heat haze", "name": "Heat haze max intensity", "help": "The strongest strength of the heat-shimmer effect.", "type": "slider", "tag": "hh_maxIntensity", "min": 0, "max": 2, "step": 0.01}, {"key": "dir_shadow_softness", "section": "Shadows", "name": "Shadow softness", "help": "How soft or hard-edged directional shadows are.", "type": "slider", "tag": "dir_shadow_softness", "min": 0, "max": 10, "step": 0.05}, {"key": "dir_shadow_distance_mult", "section": "Shadows", "name": "Shadow draw distance", "help": "How far away shadows are still drawn.", "type": "slider", "tag": "dir_shadow_distance_multiplier", "min": 0, "max": 5, "step": 0.05}, {"key": "shadow_distance_mult", "section": "Shadows", "name": "Object shadow distance", "help": "How far away regular object shadows are still drawn.", "type": "slider", "tag": "shadow_distance_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "wind_speed_mult", "section": "Misc", "name": "Wind speed multiplier", "help": "How strong the wind blows during this weather.", "type": "slider", "tag": "wind_speed_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "far_clip", "section": "Misc", "name": "Draw distance (far clip)", "help": "The maximum camera draw distance.", "type": "slider", "tag": "far_clip", "min": 0, "max": 20000, "step": 10}, {"key": "temperature", "section": "Misc", "name": "Temperature", "help": "The ambient temperature setting used for weather effects like breath fog.", "type": "slider", "tag": "temperature", "min": -50, "max": 50, "step": 0.5}, {"key": "particle_emissive_intensity", "section": "Misc", "name": "Particle glow intensity", "help": "How strongly glowing particle effects (fire, sparks) emit light.", "type": "slider", "tag": "particle_emissive_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "particle_light_intensity", "section": "Misc", "name": "Particle light intensity", "help": "How much light-emitting particle effects light up their surroundings.", "type": "slider", "tag": "particle_light_intensity_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "sprite_brightness", "section": "Misc", "name": "Light corona brightness", "help": "Brightness of light coronas (streetlights, headlights at a distance).", "type": "slider", "tag": "sprite_brightness", "min": 0, "max": 5, "step": 0.05}, {"key": "sprite_size", "section": "Misc", "name": "Light corona size", "help": "Size of light coronas.", "type": "slider", "tag": "sprite_size", "min": 0, "max": 5, "step": 0.05}, {"key": "lod_mult", "section": "Misc", "name": "LOD draw-distance multiplier", "help": "A global multiplier over object level-of-detail draw distances.", "type": "slider", "tag": "lod_mult", "min": 0, "max": 5, "step": 0.05}, {"key": "no_rain", "section": "Misc", "name": "Disable rain effects", "help": "Set above 0 to fully suppress rain rendering regardless of weather.", "type": "slider", "tag": "no_rain", "min": 0, "max": 1, "step": 1}];
+  const SECTION_ORDER = ["Sky","Clouds","Sun & moon","Fog","Light","Reflections","Water","DOF & lens","Post FX","Night vision","Heat haze","Shadows","Misc"];
+  const DAY_IDX = HOURS.indexOf(13);   // 1pm keyframe, used as the "Day" quick-edit point
+  const NIGHT_IDX = HOURS.indexOf(0);  // 12am keyframe, used as the "Night" quick-edit point
+
+  function hourLabel(h){
+    if (h === 0) return "12A";
+    if (h < 12) return h + "A";
+    if (h === 12) return "12P";
+    return (h - 12) + "P";
+  }
+
+  // ---------- STATE ----------
+  let fileName = "";
+  let originalText = "";
+  let flatSegments = [];
+  let cycles = [];              // flattened region list, each region.params[tag] = segment object (live, aliased into flatSegments)
+  let originalSnapshot = [];    // originalSnapshot[regionIdx][tag] = array clone at load time
+  let currentRegionIdx = 0;
+  let currentFilter = "";
+  let rawGroups = [];           // computed once per file: [{prefix, items:[{tag,label} or {isColor,label,tags}]}]
+  let curatedTagSet = new Set();
+  let currentFormat = 'xml';    // 'xml' (timecycle weather cycle), 'dat' (flat visualsettings.dat), or 'attr' (flat attribute XML)
+  let datLines = [];
+  let datEntries = [];          // {line, key, sep, value, suffix, rest}
+  let datOriginalSnapshot = []; // clone of entries' values at load time, same order as datEntries
+  let datFilter = "";
+  let attrSegs = [];
+  let attrEntries = [];         // {tag, attrs:[{name,value}], originalRaw, current:{}}
+  let attrFilter = "";
+  let treeNodes = [];           // full parsed tree (root-level nodes)
+  let treeList = null;          // { container, items } — the browsable Item list
+  let treeCurrentIdx = -1;
+  let treeFilter = "";
+  let treeSubFilter = "";
+  const CLOUDKEY_HOURS = [0,4,5,6,7,8,12,16,17,18,19,20,21,22];
+  let ckNodes = [];
+  let ckItems = [];              // weather-type Item nodes
+  let ckCurrentIdx = -1;
+  let ckFilter = "";
+
+  function parseLenientFloat(token){
+    const n = Number(token);
+    if (!Number.isNaN(n)) return n;
+    const m = /^-?\d+(\.\d+)?/.exec(token);
+    return m ? Number(m[0]) : 0;
+  }
+
+  // ---------- PARSE (flat segment strategy: byte-perfect round trip) ----------
+  function parseXML(text){
+    const segs = [];
+    let i = 0;
+    const n = text.length;
+    while(i < n){
+      const nextLt = text.indexOf('<', i);
+      if (nextLt === -1){ segs.push({type:'raw', text: text.slice(i)}); break; }
+      if (nextLt > i) segs.push({type:'raw', text: text.slice(i, nextLt)});
+      const leafMatch = /^<([a-zA-Z_][a-zA-Z_0-9]*)>([^<]*)<\/\1>/.exec(text.slice(nextLt));
+      if (leafMatch){
+        const tag = leafMatch[1], valsText = leafMatch[2];
+        const tokens = valsText.trim().length ? valsText.trim().split(/\s+/) : [];
+        const looksNumericRow = tokens.length > 0 && tokens.every(t => /^-?\d/.test(t));
+        if (looksNumericRow){
+          const prefix = /^\s*/.exec(valsText)[0];
+          segs.push({type:'param', tag, prefix, values: tokens.map(parseLenientFloat)});
+          i = nextLt + leafMatch[0].length; continue;
+        }
+        segs.push({type:'raw', text: leafMatch[0]});
+        i = nextLt + leafMatch[0].length; continue;
+      }
+      const anyTag = /^<[^>]*>/.exec(text.slice(nextLt));
+      if (anyTag){ segs.push({type:'raw', text: anyTag[0]}); i = nextLt + anyTag[0].length; }
+      else { segs.push({type:'raw', text: text.slice(nextLt)}); break; }
+    }
+
+    const parsedCycles = [];
+    let curCycle = null, curRegion = null;
+    for (const seg of segs){
+      if (seg.type === 'raw'){
+        let mm;
+        if ((mm = /^<cycle\s+name="([^"]+)"\s+regions="(\d+)">$/.exec(seg.text))){
+          curCycle = { name: mm[1], regions: [] };
+          parsedCycles.push(curCycle);
+          curRegion = null;
+        } else if ((mm = /^<region\s+name="([^"]+)">$/.exec(seg.text))){
+          curRegion = { name: mm[1], params: {} };
+          if (curCycle) curCycle.regions.push(curRegion);
+        } else if (seg.text === '</region>'){
+          curRegion = null;
+        } else if (seg.text === '</cycle>'){
+          curCycle = null;
+        }
+      } else if (seg.type === 'param'){
+        if (curRegion) curRegion.params[seg.tag] = seg;
+      }
+    }
+    if (parsedCycles.length === 0) throw new Error("Couldn't find any weather data in this file. Make sure it's a GTA V timecycle XML.");
+    const allRegions = [];
+    parsedCycles.forEach(c => c.regions.forEach(r => allRegions.push(r)));
+    return { segments: segs, regions: allRegions };
+  }
+
+  function serialize(segs){
+    segs = segs || flatSegments;
+    let out = '';
+    for (const seg of segs){
+      if (seg.type === 'raw') out += seg.text;
+      else out += `<${seg.tag}>${seg.prefix}${seg.values.map(formatNum).join(' ')}</${seg.tag}>`;
+    }
+    return out;
+  }
+
+  function formatNum(n){
+    if (Number.isNaN(n) || n === undefined || n === null) n = 0;
+    let s = n.toFixed(4);
+    if (s === '-0.0000') s = '0.0000';
+    return s;
+  }
+  function clamp255(v){ return Math.max(0, Math.min(255, Math.round(v))); }
+  function hexFromFloats(r,g,b){
+    return '#' + [r,g,b].map(v => clamp255(v*255).toString(16).padStart(2,'0')).join('');
+  }
+  function floatsFromHex(hex){
+    return [parseInt(hex.slice(1,3),16)/255, parseInt(hex.slice(3,5),16)/255, parseInt(hex.slice(5,7),16)/255];
+  }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+  // ---------- .dat engine (visualsettings.dat: flat "key<whitespace>value" lines) ----------
+  // Comments (# or //) and blank lines are left completely untouched. Data lines keep their
+  // exact key text, whitespace, optional trailing "f" float suffix, and any trailing inline
+  // comment — only the numeric value itself is ever rewritten.
+  function detectFormat(text){
+    const head = text.slice(0, 400);
+    if (/<cycle\s+name=/.test(head)) return 'xml';
+    if (/<CloudSettingsMap>/.test(head)) return 'cloudkey';
+    if (/<CContentsOfWeatherXmlFile>|<CloudHatManager>|<CLensFlareSettings>/.test(head)) return 'tree';
+    if (/^\s*<\?xml/.test(text)) return 'attr';
+    return 'dat';
+  }
+
+  function parseDat(text){
+    const lines = text.split('\n');
+    const entries = [];
+    for (let i=0;i<lines.length;i++){
+      const hasCR = lines[i].endsWith('\r');
+      const bare = hasCR ? lines[i].slice(0,-1) : lines[i];
+      const stripped = bare.trimStart();
+      if (!bare.trim() || stripped[0] === '#' || stripped.slice(0,2) === '//') continue;
+      const m = /^(\S+)(\s+)(-?\d+(?:\.\d+)?)(f?)(.*)$/.exec(bare);
+      if (m){
+        const [, key, sep, numStr, suffix, rest] = m;
+        entries.push({ line: i, key, sep, value: Number(numStr), suffix, rest });
+      }
+    }
+    if (!entries.length) throw new Error("Couldn't find any key/value settings in this file. Make sure it's a visualsettings.dat file.");
+    return { lines, entries };
+  }
+
+  function formatDatNum(n){
+    if (Number.isNaN(n) || n === undefined || n === null) n = 0;
+    let r = Math.round(n * 1e6) / 1e6;
+    if (Object.is(r, -0)) r = 0;
+    return String(r);
+  }
+
+  function serializeDat(lines, entries){
+    const byLine = {};
+    entries.forEach(e => { byLine[e.line] = e; });
+    const out = [];
+    for (let i=0;i<lines.length;i++){
+      const e = byLine[i];
+      if (!e){ out.push(lines[i]); continue; }
+      const hasCR = lines[i].endsWith('\r');
+      out.push(`${e.key}${e.sep}${formatDatNum(e.value)}${e.suffix}${e.rest}${hasCR?'\r':''}`);
+    }
+    return out.join('\n');
+  }
+
+  // ---------- .attr engine (flat, single-level attribute XML: SSAO/HBAO settings, time.xml) ----------
+  // Every tag that carries attributes — self-closing or not — becomes one editable entry.
+  // Editing a value does a targeted find/replace of just that attribute inside the tag's own
+  // original text, so anything else about the tag (attribute order, spacing, quoting) never moves.
+  function parseAttrXML(text){
+    const segs = [];
+    let i = 0;
+    const n = text.length;
+    const tagRe = /^<([a-zA-Z_][a-zA-Z_0-9]*)((?:\s+[a-zA-Z_:][a-zA-Z0-9_:.\-]*="[^"]*")*)\s*(\/?)>/;
+    while (i < n){
+      const nextLt = text.indexOf('<', i);
+      if (nextLt === -1){ segs.push({type:'raw', text: text.slice(i)}); break; }
+      if (nextLt > i) segs.push({type:'raw', text: text.slice(i, nextLt)});
+      const rest = text.slice(nextLt);
+      const cm = /^<!--[\s\S]*?-->/.exec(rest);
+      if (cm){ segs.push({type:'raw', text: cm[0]}); i = nextLt + cm[0].length; continue; }
+      const tm = tagRe.exec(rest);
+      if (tm){
+        const [full, tag, attrsRaw] = tm;
+        const attrs = [];
+        const attrRe = /([a-zA-Z_:][a-zA-Z0-9_:.\-]*)="([^"]*)"/g;
+        let am;
+        while ((am = attrRe.exec(attrsRaw)) !== null) attrs.push({ name: am[1], value: am[2] });
+        if (attrs.length){
+          segs.push({ type:'attrtag', tag, attrs, originalRaw: full, current:{} });
+        } else {
+          segs.push({ type:'raw', text: full });
+        }
+        i = nextLt + full.length;
+        continue;
+      }
+      const anyTag = /^<[^>]*>/.exec(rest);
+      if (anyTag){ segs.push({type:'raw', text: anyTag[0]}); i = nextLt + anyTag[0].length; }
+      else { segs.push({type:'raw', text: rest}); break; }
+    }
+    const attrEntries = segs.filter(s => s.type === 'attrtag');
+    if (!attrEntries.length) throw new Error("Couldn't find any attribute-based settings in this file.");
+    return { segments: segs, entries: attrEntries };
+  }
+
+  function attrValueOf(entry, name){
+    return Object.prototype.hasOwnProperty.call(entry.current, name) ? entry.current[name] : entry.attrs.find(a=>a.name===name).value;
+  }
+  function setAttrValue(entry, name, newRaw){
+    entry.current[name] = newRaw;
+  }
+  function isAttrEntryEdited(entry){
+    return Object.keys(entry.current).some(name => {
+      const orig = entry.attrs.find(a=>a.name===name).value;
+      return entry.current[name] !== orig;
+    });
+  }
+
+  function serializeAttrXML(segs){
+    let out = '';
+    for (const seg of segs){
+      if (seg.type === 'raw'){ out += seg.text; continue; }
+      let raw = seg.originalRaw;
+      Object.keys(seg.current).forEach(name => {
+        const re = new RegExp(`(${name}=")([^"]*)(")`);
+        const val = esc(seg.current[name]);
+        raw = raw.replace(re, (m,p1,p2,p3) => p1 + val + p3);
+      });
+      out += raw;
+    }
+    return out;
+  }
+
+  // ---------- generic tree engine (nested <Item> files: weather.xml, clouds.xml, lensflare_*.xml, cloudkeyframes.xml) ----------
+  // A full recursive parse, unlike the flat-segment engines above, because these files nest
+  // real lists inside lists (e.g. cloud hats containing their own list of layers). Every bit
+  // of raw text (including comments) becomes a {type:'text', raw} leaf that's echoed back
+  // untouched unless something specifically mutates its .raw — so round-trip is exact by
+  // construction, and edits can never bleed into a sibling entry.
+  function treeTokenize(text){
+    const tokens = [];
+    let i = 0;
+    const n = text.length;
+    while (i < n){
+      const lt = text.indexOf('<', i);
+      if (lt === -1){ if (i < n) tokens.push({type:'text', text: text.slice(i)}); break; }
+      if (lt > i) tokens.push({type:'text', text: text.slice(i, lt)});
+      if (text.startsWith('<!--', lt)){
+        let end = text.indexOf('-->', lt);
+        if (end === -1) end = n-3;
+        tokens.push({type:'text', text: text.slice(lt, end+3)});
+        i = end+3; continue;
+      }
+      if (text.startsWith('<?', lt)){
+        const end = text.indexOf('?>', lt);
+        tokens.push({type:'text', text: text.slice(lt, end+2)});
+        i = end+2; continue;
+      }
+      if (text.startsWith('</', lt)){
+        const end = text.indexOf('>', lt);
+        const name = text.slice(lt+2, end).trim();
+        tokens.push({type:'close', name, text: text.slice(lt, end+1)});
+        i = end+1; continue;
+      }
+      const end = text.indexOf('>', lt);
+      if (end === -1){ tokens.push({type:'text', text: text.slice(lt)}); break; }
+      const raw = text.slice(lt, end+1);
+      const selfClose = /\/>$/.test(raw);
+      const tm = /^<([a-zA-Z_][\w:.\-]*)((?:\s+[\w:.\-]+="[^"]*")*)\s*\/?>/.exec(raw);
+      if (!tm){ tokens.push({type:'text', text: raw}); i = end+1; continue; }
+      const name = tm[1];
+      const attrsRaw = tm[2];
+      const attrs = [];
+      const attrRe = /([\w:.\-]+)="([^"]*)"/g;
+      let am;
+      while ((am = attrRe.exec(attrsRaw)) !== null) attrs.push({ name: am[1], value: am[2] });
+      tokens.push({ type: selfClose ? 'selfclose' : 'open', name, attrs, text: raw });
+      i = end+1;
+    }
+    return tokens;
+  }
+
+  function parseTree(text){
+    const tokens = treeTokenize(text);
+    let pos = 0;
+    function parseChildren(){
+      const children = [];
+      while (pos < tokens.length){
+        const t = tokens[pos];
+        if (t.type === 'close') return children;
+        if (t.type === 'text'){ children.push({ type:'text', raw: t.text }); pos++; continue; }
+        if (t.type === 'selfclose'){
+          children.push({ type:'element', name:t.name, attrs:t.attrs, selfClose:true, children:[], openTag:t.text, closeTag:'', current:{} });
+          pos++; continue;
+        }
+        if (t.type === 'open'){
+          const openTok = t; pos++;
+          const kids = parseChildren();
+          let closeTag = '';
+          if (pos < tokens.length && tokens[pos].type === 'close'){ closeTag = tokens[pos].text; pos++; }
+          children.push({ type:'element', name:openTok.name, attrs:openTok.attrs, selfClose:false, children:kids, openTag:openTok.text, closeTag, current:{} });
+          continue;
+        }
+        pos++;
+      }
+      return children;
+    }
+    return parseChildren();
+  }
+
+  function serializeTree(nodes){
+    let out = '';
+    for (const nd of nodes){
+      if (nd.type === 'text'){ out += nd.raw; continue; }
+      let openTag = nd.openTag;
+      if (nd.current && Object.keys(nd.current).length){
+        Object.keys(nd.current).forEach(attrName => {
+          const re = new RegExp(`(\\b${attrName}=")([^"]*)(")`);
+          openTag = openTag.replace(re, (m,p1,p2,p3) => p1 + esc(nd.current[attrName]) + p3);
+        });
+      }
+      out += openTag;
+      if (!nd.selfClose){
+        out += serializeTree(nd.children);
+        out += nd.closeTag;
+      }
+    }
+    return out;
+  }
+
+  function treeElementChildren(node){ return node.children.filter(c => c.type === 'element'); }
+  function treeFindAll(nodes, name){ return nodes.filter(n => n.type === 'element' && n.name === name); }
+  function treeFindFirst(nodes, name){ return treeFindAll(nodes, name)[0]; }
+  function treeMainTextChild(node){
+    const candidates = node.children.filter(c => c.type === 'text' && c.raw.trim().length && !c.raw.trim().startsWith('<!--'));
+    return candidates.length ? candidates[candidates.length - 1] : null;
+  }
+  function treeTextOf(node){
+    const t = treeMainTextChild(node);
+    return t ? t.raw.trim() : '';
+  }
+  function treeSetElementText(node, newValue){
+    const t = treeMainTextChild(node);
+    if (t) t.raw = esc(newValue);
+  }
+  function treeSetAttr(node, attrName, value){ node.current[attrName] = value; }
+  function treeAttrValue(node, attrName){
+    return Object.prototype.hasOwnProperty.call(node.current, attrName) ? node.current[attrName] : node.attrs.find(a=>a.name===attrName).value;
+  }
+  function treeAttrEdited(node, attrName){
+    const orig = node.attrs.find(a=>a.name===attrName);
+    return orig && Object.prototype.hasOwnProperty.call(node.current, attrName) && node.current[attrName] !== orig.value;
+  }
+  function treeTextEdited(node){
+    const t = treeMainTextChild(node);
+    return !!(t && t._origRaw !== undefined && t.raw !== t._origRaw);
+  }
+  function snapshotTreeText(nodes){
+    nodes.forEach(nd => {
+      if (nd.type === 'text'){ nd._origRaw = nd.raw; return; }
+      snapshotTreeText(nd.children);
+    });
+  }
+
+  // Finds the first place in the tree that holds 2+ sibling <Item> elements — that's the
+  // browsable list. If it only finds exactly one Item and that Item itself wraps another
+  // Item-list, it transparently drills in (handles files like lensflare where there's one
+  // outer "type" wrapping the real list of ~90 flare elements).
+  function findItemList(node, depth){
+    depth = depth || 0;
+    if (depth > 6) return null;
+    const kids = treeElementChildren(node);
+    const items = kids.filter(c => c.name === 'Item');
+    if (items.length > 1) return { container: node, items };
+    if (items.length === 1){
+      for (const child of treeElementChildren(items[0])){
+        const found = findItemList(child, depth+1);
+        if (found) return found;
+      }
+    }
+    for (const child of kids){
+      const found = findItemList(child, depth+1);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const TREE_NAME_TAGS = ['Name','mName','mFilename','N','n','name'];
+  function treeEntryLabel(item, idx){
+    for (const tag of TREE_NAME_TAGS){
+      const nd = treeFindFirst(item.children, tag);
+      if (nd){ const t = treeTextOf(nd); if (t) return t; }
+    }
+    return 'Entry #' + (idx+1);
+  }
+
+  // ---------- helpers over the live data model ----------
+  function region(){ return cycles[currentRegionIdx]; }
+  function tagValues(tag){ const p = region().params[tag]; return p ? p.values : null; }
+  function tagExistsEverywhere(tags){ return tags.every(t => !!region().params[t]); }
+
+  function humanizeTag(tag){
+    return tag.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  PARAMS.forEach(p => {
+    if (p.type === 'color') p.tags.forEach(t => curatedTagSet.add(t));
+    else curatedTagSet.add(p.tag);
+  });
+
+  // Build "raw" (uncurated) parameter groups for a region: auto-detect r/g/b triplets, then group remainder by prefix.
+  function buildRawGroups(reg){
+    const allTags = Object.keys(reg.params).filter(t => !curatedTagSet.has(t));
+    const used = new Set();
+    const colorItems = [];
+    allTags.forEach(t => {
+      if (used.has(t)) return;
+      const m = /^(.*)_r$/.exec(t);
+      if (m){
+        const base = m[1];
+        const gTag = base + '_g', bTag = base + '_b';
+        if (allTags.includes(gTag) && allTags.includes(bTag)){
+          colorItems.push({ isColor:true, label: humanizeTag(base), tags:[t,gTag,bTag] });
+          used.add(t); used.add(gTag); used.add(bTag);
+        }
+      }
+    });
+    const scalarByPrefix = {};
+    allTags.forEach(t => {
+      if (used.has(t)) return;
+      const prefix = t.split('_')[0];
+      (scalarByPrefix[prefix] = scalarByPrefix[prefix] || []).push({ isColor:false, label: humanizeTag(t), tag:t });
+    });
+    const groups = Object.keys(scalarByPrefix).sort().map(prefix => ({
+      prefix, items: scalarByPrefix[prefix].sort((a,b)=>a.label.localeCompare(b.label))
+    }));
+    if (colorItems.length){
+      groups.unshift({ prefix: '(colors)', items: colorItems.sort((a,b)=>a.label.localeCompare(b.label)) });
+    }
+    return groups;
+  }
+
+  function dynamicRange(values){
+    let mn = Math.min(...values), mx = Math.max(...values);
+    if (mn === mx){ if (mn === 0){ mn = -1; mx = 1; } else { mn = mn > 0 ? 0 : mn*2; mx = mx > 0 ? mx*2 : 0; } }
+    const pad = (mx - mn) * 0.25;
+    return { min: mn - pad, max: mx + pad };
+  }
+
+  // ---------- UI refs ----------
+  const emptyState = document.getElementById('emptyState');
+  const editorRoot = document.getElementById('editorRoot');
+  const fileRow = document.getElementById('fileRow');
+  const filenameTag = document.getElementById('filenameTag');
+  const exportBtn = document.getElementById('exportBtn');
+  const searchRow = document.getElementById('searchRow');
+  const sectionNav = document.getElementById('sectionNav');
+  const navScrollWrap = document.getElementById('navScrollWrap');
+  const navArrowLeft = document.getElementById('navArrowLeft');
+  const navArrowRight = document.getElementById('navArrowRight');
+  const searchInput = document.getElementById('search');
+
+  function buildEditor(){
+    const regions = cycles;
+    const multiRegion = regions.length > 1;
+    rawGroups = buildRawGroups(region());
+
+    let html = '';
+    if (multiRegion){
+      html += `<div class="region-toggle" id="regionToggle">
+        ${regions.map((r,i) => `<button data-idx="${i}" class="${i===currentRegionIdx?'active':''}">${prettyRegionName(r.name)}</button>`).join('')}
+      </div>
+      <p class="region-hint">${regionHint(regions[currentRegionIdx].name)}</p>`;
+    }
+
+    const editedCount = countEdited();
+    html += `<div class="toolrow">
+      <span class="stat-pill"><b>${PARAMS.length + countRawParams()}</b> parameters</span>
+      <span class="stat-pill"><b>${editedCount}</b> edited</span>
+      ${multiRegion ? `<button class="btn small" id="copyRegionBtn">Copy this region to others</button>` : ``}
+      <button class="btn small" id="resetAllBtn">Reset all</button>
+    </div>`;
+
+    SECTION_ORDER.forEach(section => {
+      const items = PARAMS.filter(p => p.section === section);
+      if (!items.length) return;
+      const visibleItems = items.filter(p => paramMatches(p, region()));
+      if (!visibleItems.length) return;
+      html += `<div class="section-block" id="sec-${slug(section)}">
+        <div class="section-label">${section} <span class="count">(${visibleItems.length})</span></div>
+        ${visibleItems.map(p => renderParamCard(p)).join('')}
+      </div>`;
+    });
+
+    if (rawGroups.length){
+      html += `<div class="section-block" id="sec-other">
+        <div class="section-label">Other parameters <span class="count">(every remaining field in this file)</span></div>
+        ${rawGroups.map(g => renderRawGroup(g)).join('')}
+      </div>`;
+    }
+
+    html += `<div class="warn-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.86L1.8 18a1.5 1.5 0 001.3 2.25h17.8a1.5 1.5 0 001.3-2.25L13.7 3.86a1.5 1.5 0 00-2.6 0z"/></svg>
+      <span>Each control edits the file's actual 13 time-of-day keyframes independently, so changing daytime values won't touch night (or vice-versa). Use "Flatten" only if you deliberately want one value across the whole day.</span>
+    </div>`;
+
+    editorRoot.innerHTML = html;
+    bindEditorEvents();
+    buildSectionNav();
+    applyFilter();
+  }
+
+  function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+  function countRawParams(){
+    let n = 0;
+    rawGroups.forEach(g => g.items.forEach(it => n++));
+    return n;
+  }
+  function countEdited(){
+    let n = 0;
+    PARAMS.forEach(p => { if (isParamEdited(p)) n++; });
+    rawGroups.forEach(g => g.items.forEach(it => {
+      if (it.isColor){ if (it.tags.some(t=>tagEdited(t))) n++; }
+      else if (tagEdited(it.tag)) n++;
+    }));
+    return n;
+  }
+
+  function tagEdited(tag){
+    const cur = tagValues(tag);
+    const snap = (originalSnapshot[currentRegionIdx] || {})[tag];
+    if (!cur || !snap) return false;
+    for (let i=0;i<cur.length;i++) if (Math.abs(cur[i]-snap[i]) > 1e-6) return true;
+    return false;
+  }
+  function isParamEdited(p){
+    if (p.type === 'color') return p.tags.some(t=>tagEdited(t));
+    return tagEdited(p.tag);
+  }
+
+  function paramMatches(p, reg){
+    if (p.type === 'color'){ if (!tagExistsEverywhere(p.tags)) return false; }
+    else { if (!reg.params[p.tag]) return false; }
+    if (!currentFilter) return true;
+    const hay = (p.name + ' ' + p.help + ' ' + p.section + ' ' + (p.tag||(p.tags||[]).join(' '))).toLowerCase();
+    return hay.indexOf(currentFilter) !== -1;
+  }
+
+  function prettyRegionName(name){
+    if (name === 'GLOBAL') return 'Open world';
+    if (name === 'URBAN') return 'City';
+    return name;
+  }
+  function regionHint(name){
+    if (name === 'GLOBAL') return 'Applies everywhere outside dense city areas.';
+    if (name === 'URBAN') return 'Applies in dense downtown / city areas.';
+    return '';
+  }
+
+  // ---------- rendering: gradient / sparkline previews ----------
+  function gradientCss(colorArrays){
+    // colorArrays: array of {hour, hex}
+    const stops = colorArrays.map(c => `${c.hex} ${(c.hour/24*100).toFixed(1)}%`).join(', ');
+    return `linear-gradient(90deg, ${stops})`;
+  }
+  function sparklineSvg(values, mn, mx){
+    const w = 160, h = 28;
+    const pts = values.map((v,idx) => {
+      const x = (HOURS[idx]/24) * w;
+      const yNorm = mx > mn ? (v - mn) / (mx - mn) : 0.5;
+      const y = h - Math.max(0,Math.min(1,yNorm)) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  function otherRegionsInfo(){
+    // returns null if only one region, else { label, targets:[region,...] }
+    if (cycles.length < 2) return null;
+    const others = cycles.filter((r,i) => i !== currentRegionIdx);
+    if (cycles.length === 2){
+      return { label: 'Apply to ' + prettyRegionName(others[0].name), targets: others };
+    }
+    return { label: 'Apply to other regions', targets: others };
+  }
+
+  function renderCard(cfg){
+    // cfg: { key, dataKind, label, helpHtml, isColor, tags, min, max, step, extraAttrs }
+    const isChanged = cfg.tags.some(t => tagEdited(t));
+    const quick = cfg.isColor ? renderQuickColor(cfg.key, cfg.tags) : renderQuickSlider(cfg.key, cfg.tags[0], cfg.min, cfg.max, cfg.step);
+    let preview;
+    if (cfg.isColor){
+      const rArr = tagValues(cfg.tags[0]), gArr = tagValues(cfg.tags[1]), bArr = tagValues(cfg.tags[2]);
+      const stops = HOURS.map((h,idx) => ({ hour:h, hex: hexFromFloats(rArr[idx],gArr[idx],bArr[idx]) }));
+      preview = `<div class="gradient-bar" style="background:${gradientCss(stops)}"></div>`;
+    } else {
+      preview = sparklineSvg(tagValues(cfg.tags[0]), cfg.min, cfg.max);
+    }
+    const strip = cfg.isColor ? colorStripHtml(cfg.key, cfg.tags) : sliderStripHtml(cfg.key, cfg.tags[0], cfg.min, cfg.max, cfg.step);
+    const regionInfo = otherRegionsInfo();
+    const applyBtn = regionInfo ? `<button class="mini-btn apply-region-btn" data-key="${esc(cfg.key)}">${esc(regionInfo.label)}</button>` : '';
+    const canPaste = !!clipboard && clipboard.kind === (cfg.isColor ? 'color' : 'slider');
+    return `
+    <div class="param-card" data-key="${esc(cfg.key)}" data-kind="${cfg.dataKind}"${cfg.extraAttrs||''}>
+      <div class="card-head">
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <div class="card-main">
+          <div class="param-name">${cfg.label} ${isChanged?'<span class="changed-tag">EDITED</span>':''}</div>
+          <p class="param-help">${cfg.helpHtml}</p>
+          <div class="preview-wrap">${preview}</div>
+        </div>
+        <div class="quickrow" onclick="event.stopPropagation()">${quick}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-actions">
+          <button class="mini-btn flatten-btn" data-key="${esc(cfg.key)}">Flatten to noon value</button>
+          ${isChanged?`<button class="mini-btn warn revert-btn" data-key="${esc(cfg.key)}">Revert</button>`:``}
+          ${applyBtn}
+          <button class="mini-btn copy-param-btn" data-key="${esc(cfg.key)}" title="Copy this parameter's 13 values">Copy</button>
+          <button class="mini-btn paste-param-btn" data-key="${esc(cfg.key)}" ${canPaste?'':'disabled'} title="${canPaste? 'Paste '+esc(clipboard.label) : 'Copy a matching parameter first'}">Paste</button>
+        </div>
+        <div class="keyframe-strip">${strip}</div>
+      </div>
+    </div>`;
+  }
+
+  function renderQuickColor(key, tags){
+    const rArr = tagValues(tags[0]), gArr = tagValues(tags[1]), bArr = tagValues(tags[2]);
+    const dayHex = hexFromFloats(rArr[DAY_IDX], gArr[DAY_IDX], bArr[DAY_IDX]);
+    const nightHex = hexFromFloats(rArr[NIGHT_IDX], gArr[NIGHT_IDX], bArr[NIGHT_IDX]);
+    return `
+      <div class="quick-item">
+        <span class="quick-label">Day</span>
+        <button class="kf-swatch quick-swatch" style="background:${dayHex}">
+          <input type="color" class="kf-color" value="${dayHex}" data-key="${esc(key)}" data-idx="${DAY_IDX}">
+        </button>
+        <input type="text" class="kf-hex quick-hex" value="${dayHex}" data-key="${esc(key)}" data-idx="${DAY_IDX}" maxlength="7" spellcheck="false">
+      </div>
+      <div class="quick-item">
+        <span class="quick-label">Night</span>
+        <button class="kf-swatch quick-swatch" style="background:${nightHex}">
+          <input type="color" class="kf-color" value="${nightHex}" data-key="${esc(key)}" data-idx="${NIGHT_IDX}">
+        </button>
+        <input type="text" class="kf-hex quick-hex" value="${nightHex}" data-key="${esc(key)}" data-idx="${NIGHT_IDX}" maxlength="7" spellcheck="false">
+      </div>`;
+  }
+  function renderQuickSlider(key, tag, min, max, step){
+    const arr = tagValues(tag);
+    return `
+      <div class="quick-item">
+        <span class="quick-label">Day</span>
+        <input type="number" class="kf-num quick-num" value="${formatDisplay(arr[DAY_IDX], step)}" step="${step}" min="${min}" max="${max}" data-key="${esc(key)}" data-idx="${DAY_IDX}">
+      </div>
+      <div class="quick-item">
+        <span class="quick-label">Night</span>
+        <input type="number" class="kf-num quick-num" value="${formatDisplay(arr[NIGHT_IDX], step)}" step="${step}" min="${min}" max="${max}" data-key="${esc(key)}" data-idx="${NIGHT_IDX}">
+      </div>`;
+  }
+  function colorStripHtml(key, tags){
+    const rArr = tagValues(tags[0]), gArr = tagValues(tags[1]), bArr = tagValues(tags[2]);
+    return HOURS.map((h,idx) => {
+      const hex = hexFromFloats(rArr[idx],gArr[idx],bArr[idx]);
+      return `
+      <div class="kf-point">
+        <button class="kf-swatch" style="background:${hex}">
+          <input type="color" class="kf-color" value="${hex}" data-key="${esc(key)}" data-idx="${idx}">
+        </button>
+        <input type="text" class="kf-hex" value="${hex}" data-key="${esc(key)}" data-idx="${idx}" maxlength="7" spellcheck="false">
+        <span class="kf-hour">${hourLabel(h)}</span>
+      </div>`;
+    }).join('');
+  }
+  function sliderStripHtml(key, tag, min, max, step){
+    const arr = tagValues(tag);
+    return HOURS.map((h,idx) => `
+      <div class="kf-point">
+        <input type="number" class="kf-num" value="${formatDisplay(arr[idx], step)}" step="${step}" min="${min}" max="${max}" data-key="${esc(key)}" data-idx="${idx}">
+        <span class="kf-hour">${hourLabel(h)}</span>
+      </div>`).join('');
+  }
+
+  function renderParamCard(p){
+    if (p.type === 'color'){
+      return renderCard({ key:p.key, dataKind:'color', label:p.name, helpHtml:p.help, isColor:true, tags:p.tags });
+    }
+    return renderCard({ key:p.key, dataKind:'slider', label:p.name, helpHtml:p.help, isColor:false, tags:[p.tag], min:p.min, max:p.max, step:p.step });
+  }
+
+  function renderRawItemCard(item){
+    const key = 'raw:' + (item.isColor ? item.tags.join(',') : item.tag);
+    if (item.isColor){
+      return renderCard({
+        key, dataKind:'rawcolor', label:item.label,
+        helpHtml:`Raw field group: ${item.tags.join(', ')}`, isColor:true, tags:item.tags,
+        extraAttrs:` data-tags="${item.tags.join(',')}"`
+      });
+    }
+    const arr = tagValues(item.tag);
+    const range = dynamicRange(arr);
+    return renderCard({
+      key, dataKind:'rawslider', label:item.label,
+      helpHtml:`Raw field: <code>${item.tag}</code>`, isColor:false, tags:[item.tag],
+      min: Number(range.min.toFixed(3)), max: Number(range.max.toFixed(3)), step: 0.01,
+      extraAttrs:` data-tag="${item.tag}"`
+    });
+  }
+
+  function renderRawGroup(g){
+    const label = g.prefix === '(colors)' ? 'Color groups' : humanizeTag(g.prefix);
+    return `<details class="raw-group" data-prefix="${esc(g.prefix)}">
+      <summary>${label} <span class="count">(${g.items.length})</span></summary>
+      <div class="raw-group-body">${g.items.map(it => renderRawItemCard(it)).join('')}</div>
+    </details>`;
+  }
+
+  function formatDisplay(v, step){
+    const decimals = step < 0.01 ? 3 : (step < 1 ? 2 : 0);
+    return Number(v).toFixed(decimals);
+  }
+
+  // ---------- events ----------
+  let clipboard = null; // { kind:'color'|'slider', label, values: [[13 nums], ...] }
+
+  function bindEditorEvents(){
+    const toggle = document.getElementById('regionToggle');
+    if (toggle){
+      toggle.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => { currentRegionIdx = Number(b.dataset.idx); buildEditor(); });
+      });
+    }
+    const copyBtn = document.getElementById('copyRegionBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copyRegionToOthers);
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (confirm('Reset every parameter back to the file as originally loaded?')) { loadText(originalText, fileName); showToast('All changes reset.'); }
+    });
+    editorRoot.querySelectorAll('.param-card').forEach(bindCard);
+    editorRoot.querySelectorAll('.keyframe-strip').forEach(enableHScroll);
+  }
+
+  function cssEsc(s){ return String(s).replace(/["\\]/g, '\\$&'); }
+
+  function resolveTags(key, kind){
+    if (key.indexOf('raw:') === 0){
+      const rest = key.slice(4);
+      return rest.split(',');
+    }
+    const p = PARAMS.find(x => x.key === key);
+    if (!p) return [];
+    return p.type === 'color' ? p.tags : [p.tag];
+  }
+
+  function setPoint(tag, idx, val){
+    const arr = tagValues(tag);
+    if (arr) arr[idx] = val;
+  }
+
+  function normalizeHex(str){
+    let s = String(str).trim();
+    if (s[0] !== '#') s = '#' + s;
+    return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : null;
+  }
+
+  // Push a hex value into every UI element bound to (key, idx): the strip swatch+color+hex,
+  // and if idx matches DAY_IDX/NIGHT_IDX, the header quick controls too.
+  function syncColorPointUI(card, key, idx, hex){
+    card.querySelectorAll(`.kf-color[data-idx="${idx}"], .quickrow .kf-color[data-idx="${idx}"]`).forEach(el => {
+      if (el.dataset.key === key){ el.value = hex; const sw = el.closest('.kf-swatch'); if (sw) sw.style.background = hex; }
+    });
+    card.querySelectorAll(`.kf-hex[data-idx="${idx}"]`).forEach(el => { if (el.dataset.key === key) el.value = hex; });
+  }
+  function syncNumPointUI(card, key, idx, val, step){
+    card.querySelectorAll(`.kf-num[data-idx="${idx}"]`).forEach(el => { if (el.dataset.key === key) el.value = formatDisplay(val, step || 0.01); });
+  }
+
+  function refreshCardChrome(key, card){
+    card = card || editorRoot.querySelector(`.param-card[data-key="${cssEsc(key)}"]`);
+    if (!card) return;
+    const kind = card.dataset.kind;
+    const tags = (kind === 'color' || kind === 'rawcolor') ? resolveTags(key,'color') : resolveTags(key,'slider');
+    const changed = tags.some(t => tagEdited(t));
+    const nameEl = card.querySelector('.param-name');
+    const existingTag = nameEl.querySelector('.changed-tag');
+    if (changed && !existingTag) nameEl.insertAdjacentHTML('beforeend', ' <span class="changed-tag">EDITED</span>');
+    if (!changed && existingTag) existingTag.remove();
+    if (kind === 'color' || kind === 'rawcolor'){
+      const rArr = tagValues(tags[0]), gArr = tagValues(tags[1]), bArr = tagValues(tags[2]);
+      const stops = HOURS.map((h,idx) => ({ hour:h, hex: hexFromFloats(rArr[idx],gArr[idx],bArr[idx]) }));
+      card.querySelector('.gradient-bar').style.background = gradientCss(stops);
+    } else {
+      const arr = tagValues(tags[0]);
+      const p = PARAMS.find(x=>x.key===key);
+      const range = p ? {min:p.min,max:p.max} : dynamicRange(arr);
+      card.querySelector('.preview-wrap').innerHTML = sparklineSvg(arr, range.min, range.max);
+    }
+    updateRevertVisibility(card, key, changed);
+    updateToolStats();
+  }
+
+  function updateRevertVisibility(card, key, changed){
+    const actions = card.querySelector('.card-actions');
+    let revertBtn = actions.querySelector('.revert-btn');
+    if (changed && !revertBtn){
+      revertBtn = document.createElement('button');
+      revertBtn.className = 'mini-btn warn revert-btn';
+      revertBtn.dataset.key = key;
+      revertBtn.textContent = 'Revert';
+      actions.insertBefore(revertBtn, actions.querySelector('.apply-region-btn') || null);
+      bindRevertButton(revertBtn, card);
+    } else if (!changed && revertBtn){
+      revertBtn.remove();
+    }
+  }
+
+  function rebuildSingleCard(oldCard, key){
+    const wasOpen = oldCard.classList.contains('open');
+    const kind = oldCard.dataset.kind;
+    let html;
+    if (kind === 'color' || kind === 'slider'){
+      html = renderParamCard(PARAMS.find(p=>p.key===key));
+    } else if (kind === 'rawcolor'){
+      const tags = oldCard.dataset.tags.split(',');
+      html = renderRawItemCard({isColor:true, label: oldCard.querySelector('.param-name').textContent.replace('EDITED','').trim(), tags});
+    } else {
+      const tag = oldCard.dataset.tag;
+      html = renderRawItemCard({isColor:false, label: oldCard.querySelector('.param-name').textContent.replace('EDITED','').trim(), tag});
+    }
+    const tmp = document.createElement('div'); tmp.innerHTML = html.trim();
+    const newCard = tmp.firstChild;
+    if (wasOpen) newCard.classList.add('open');
+    oldCard.replaceWith(newCard);
+    bindCard(newCard);
+    enableHScroll(newCard.querySelector('.keyframe-strip'));
+    updateToolStats();
+  }
+
+  function bindRevertButton(btn, card){
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const kind = card.dataset.kind;
+      const tags = kind === 'color' || kind === 'rawcolor' ? resolveTags(key, 'color') : resolveTags(key, 'slider');
+      tags.forEach(tag => {
+        const snap = (originalSnapshot[currentRegionIdx] || {})[tag];
+        const arr = tagValues(tag);
+        if (snap) for (let i=0;i<arr.length;i++) arr[i] = snap[i];
+      });
+      rebuildSingleCard(card, key);
+      showToast('Reverted to the original value.');
+    });
+  }
+
+  function bindCard(card){
+    const key = card.dataset.key;
+    card.querySelector('.card-head').addEventListener('click', () => card.classList.toggle('open'));
+
+    card.querySelectorAll('.kf-color').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const k = inp.dataset.key, idx = Number(inp.dataset.idx);
+        const [r,g,b] = floatsFromHex(inp.value);
+        const tags = resolveTags(k, 'color');
+        setPoint(tags[0], idx, r); setPoint(tags[1], idx, g); setPoint(tags[2], idx, b);
+        syncColorPointUI(card, k, idx, inp.value);
+        refreshCardChrome(k, card);
+      });
+    });
+
+    card.querySelectorAll('.kf-hex').forEach(inp => {
+      const commit = () => {
+        const k = inp.dataset.key, idx = Number(inp.dataset.idx);
+        const hex = normalizeHex(inp.value);
+        if (!hex){ showToast("That is not a valid hex code — try something like #3399ff."); return; }
+        const [r,g,b] = floatsFromHex(hex);
+        const tags = resolveTags(k, 'color');
+        setPoint(tags[0], idx, r); setPoint(tags[1], idx, g); setPoint(tags[2], idx, b);
+        syncColorPointUI(card, k, idx, hex);
+        refreshCardChrome(k, card);
+      };
+      inp.addEventListener('change', commit);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ commit(); inp.blur(); } });
+    });
+
+    card.querySelectorAll('.kf-num').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const k = inp.dataset.key, idx = Number(inp.dataset.idx);
+        const val = parseFloat(inp.value);
+        if (Number.isNaN(val)) return;
+        const tag = resolveTags(k, 'slider')[0];
+        setPoint(tag, idx, val);
+        syncNumPointUI(card, k, idx, val, Number(inp.step));
+        refreshCardChrome(k, card);
+      });
+    });
+
+    const flattenBtn = card.querySelector('.flatten-btn');
+    if (flattenBtn) flattenBtn.addEventListener('click', () => {
+      const kind = card.dataset.kind;
+      const tags = kind === 'color' || kind === 'rawcolor' ? resolveTags(key, 'color') : resolveTags(key, 'slider');
+      const noonIdx = HOURS.indexOf(13);
+      tags.forEach(tag => { const arr = tagValues(tag); const v = arr[noonIdx]; for (let i=0;i<arr.length;i++) arr[i]=v; });
+      rebuildSingleCard(card, key);
+      showToast('Flattened to a single value across the whole day.');
+    });
+
+    const revertBtn = card.querySelector('.revert-btn');
+    if (revertBtn) bindRevertButton(revertBtn, card);
+
+    const applyRegionBtn = card.querySelector('.apply-region-btn');
+    if (applyRegionBtn) applyRegionBtn.addEventListener('click', () => {
+      const info = otherRegionsInfo();
+      if (!info) return;
+      const kind = card.dataset.kind;
+      const tags = kind === 'color' || kind === 'rawcolor' ? resolveTags(key, 'color') : resolveTags(key, 'slider');
+      tags.forEach(tag => {
+        const src = tagValues(tag);
+        info.targets.forEach(r => { if (r.params[tag]) r.params[tag].values = src.slice(); });
+      });
+      showToast(`Applied to ${info.targets.map(r=>prettyRegionName(r.name)).join(', ')}.`);
+    });
+
+    const copyBtn = card.querySelector('.copy-param-btn');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      const kind = card.dataset.kind;
+      const isColor = kind === 'color' || kind === 'rawcolor';
+      const tags = isColor ? resolveTags(key, 'color') : resolveTags(key, 'slider');
+      const label = card.querySelector('.param-name').textContent.replace('EDITED','').trim();
+      clipboard = { kind: isColor ? 'color' : 'slider', label, values: tags.map(t => tagValues(t).slice()) };
+      showToast(`Copied "${label}". Now click Paste on a matching parameter.`);
+      refreshPasteButtons();
+    });
+
+    const pasteBtn = card.querySelector('.paste-param-btn');
+    if (pasteBtn) pasteBtn.addEventListener('click', () => {
+      if (!clipboard) return;
+      const kind = card.dataset.kind;
+      const isColor = kind === 'color' || kind === 'rawcolor';
+      if (clipboard.kind !== (isColor ? 'color' : 'slider')){
+        showToast('That clipboard value is a different type — copy a matching color or slider parameter first.');
+        return;
+      }
+      const tags = isColor ? resolveTags(key, 'color') : resolveTags(key, 'slider');
+      tags.forEach((tag, i) => {
+        const arr = tagValues(tag);
+        const src = clipboard.values[i] || clipboard.values[0];
+        for (let j=0;j<arr.length;j++) arr[j] = src[j];
+      });
+      rebuildSingleCard(card, key);
+      showToast(`Pasted "${clipboard.label}" here.`);
+    });
+  }
+
+  function refreshPasteButtons(){
+    editorRoot.querySelectorAll('.paste-param-btn').forEach(btn => {
+      const card = btn.closest('.param-card');
+      const isColor = card.dataset.kind === 'color' || card.dataset.kind === 'rawcolor';
+      const enabled = !!clipboard && clipboard.kind === (isColor ? 'color' : 'slider');
+      btn.disabled = !enabled;
+      btn.title = enabled ? `Paste "${clipboard.label}"` : 'Copy a matching parameter first';
+    });
+  }
+
+  // Lets people drag-scroll (mouse) and use the vertical scroll wheel to move horizontally
+  // through the section chips and the 13-point keyframe strips. A small movement threshold
+  // keeps ordinary clicks (jump-to-section, open a color picker) working normally.
+  function enableHScroll(el){
+    if (!el || el._hScrollBound) return;
+    el._hScrollBound = true;
+    el.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)){ el.scrollLeft += e.deltaY; e.preventDefault(); }
+    }, { passive:false });
+
+    const THRESHOLD = 6;
+    let down = false, dragging = false, startX = 0, startScroll = 0;
+
+    el.addEventListener('mousedown', e => {
+      down = true; dragging = false; startX = e.pageX; startScroll = el.scrollLeft;
+    });
+    window.addEventListener('mousemove', e => {
+      if (!down) return;
+      const dx = e.pageX - startX;
+      if (!dragging && Math.abs(dx) > THRESHOLD){ dragging = true; el.classList.add('dragging'); }
+      if (dragging) el.scrollLeft = startScroll - dx;
+    });
+    window.addEventListener('mouseup', () => {
+      down = false;
+      if (dragging) el.classList.remove('dragging');
+      // Swallow the click that follows a real drag, so it doesn't also trigger nav/paint.
+      if (dragging){
+        const swallow = e => { e.stopPropagation(); e.preventDefault(); el.removeEventListener('click', swallow, true); };
+        el.addEventListener('click', swallow, true);
+      }
+      dragging = false;
+    });
+  }
+
+  function updateToolStats(){
+    const bar = document.querySelector('.toolrow');
+    if (!bar) return;
+    const pills = bar.querySelectorAll('.stat-pill');
+    if (pills[1]) pills[1].innerHTML = `<b>${countEdited()}</b> edited`;
+  }
+
+  function copyRegionToOthers(){
+    if (!confirm('Copy every value from the current region into all other regions? This cannot be undone with "Revert" (only "Reset all").')) return;
+    const src = region();
+    cycles.forEach((r, idx) => {
+      if (idx === currentRegionIdx) return;
+      Object.keys(src.params).forEach(tag => {
+        if (r.params[tag]) r.params[tag].values = src.params[tag].values.slice();
+      });
+    });
+    showToast('Copied to all other regions.');
+    buildEditor();
+  }
+
+  // ---------- search / section nav ----------
+  function buildSectionNav(){
+    const present = SECTION_ORDER.filter(s => document.getElementById('sec-' + slug(s)));
+    let html = present.map(s => `<button data-target="sec-${slug(s)}">${s}</button>`).join('');
+    if (document.getElementById('sec-other')) html += `<button data-target="sec-other">Other</button>`;
+    sectionNav.innerHTML = html;
+    navScrollWrap.style.display = present.length ? 'flex' : 'none';
+    enableHScroll(sectionNav);
+    sectionNav.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        const el = document.getElementById(b.dataset.target);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    // Give layout a tick to settle before measuring scrollability.
+    requestAnimationFrame(updateNavArrows);
+  }
+
+  function updateNavArrows(){
+    const scrollable = sectionNav.scrollWidth > sectionNav.clientWidth + 2;
+    navArrowLeft.classList.toggle('is-hidden', !scrollable);
+    navArrowRight.classList.toggle('is-hidden', !scrollable);
+    if (!scrollable) return;
+    navArrowLeft.disabled = sectionNav.scrollLeft <= 0;
+    navArrowRight.disabled = sectionNav.scrollLeft >= sectionNav.scrollWidth - sectionNav.clientWidth - 1;
+  }
+  sectionNav.addEventListener('scroll', updateNavArrows);
+  navArrowLeft.addEventListener('click', () => sectionNav.scrollBy({left:-160, behavior:'smooth'}));
+  navArrowRight.addEventListener('click', () => sectionNav.scrollBy({left:160, behavior:'smooth'}));
+  window.addEventListener('resize', () => { if (navScrollWrap.style.display !== 'none') updateNavArrows(); });
+
+  function applyFilter(){
+    const q = currentFilter;
+    const cards = editorRoot.querySelectorAll('.param-card');
+    cards.forEach(card => {
+      if (!q){ card.classList.remove('is-hidden'); return; }
+      const text = card.querySelector('.param-name').textContent.toLowerCase() + ' ' +
+                   (card.querySelector('.param-help') ? card.querySelector('.param-help').textContent.toLowerCase() : '');
+      const match = text.indexOf(q) !== -1;
+      card.classList.toggle('is-hidden', !match);
+      if (match && q) card.classList.add('open');
+    });
+    editorRoot.querySelectorAll('.section-block').forEach(block => {
+      const visible = block.querySelectorAll('.param-card:not(.is-hidden)').length;
+      block.style.display = (q && visible === 0) ? 'none' : '';
+    });
+    editorRoot.querySelectorAll('details.raw-group').forEach(group => {
+      const cards2 = group.querySelectorAll('.param-card');
+      let anyVisible = false;
+      cards2.forEach(c => {
+        const text = c.querySelector('.param-name').textContent.toLowerCase() + ' ' +
+                     (c.querySelector('.param-help') ? c.querySelector('.param-help').textContent.toLowerCase() : '');
+        const match = !q || text.indexOf(q) !== -1;
+        c.classList.toggle('is-hidden', !match);
+        if (match) anyVisible = true;
+        if (match && q) c.classList.add('open');
+      });
+      group.style.display = (q && !anyVisible) ? 'none' : '';
+      if (q && anyVisible) group.open = true;
+    });
+  }
+
+  // ---------- .dat editor (flat key/value settings, grouped by the part before the first dot) ----------
+  function humanizeWords(s){
+    return s.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[._]/g,' ').replace(/\s+/g,' ').trim()
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+  function datRowLabel(key){
+    const parts = key.split('.').slice(1);
+    return humanizeWords(parts.length ? parts.join(' ') : key);
+  }
+  function datGroupLabel(prefix){ return humanizeWords(prefix); }
+  function datGroupPrefix(key){ return key.split('.')[0]; }
+  function datEntryEdited(idx){
+    const e = datEntries[idx], snap = datOriginalSnapshot[idx];
+    return snap !== undefined && Math.abs(e.value - snap) > 1e-9;
+  }
+  function datCountEdited(){
+    let n = 0;
+    for (let i=0;i<datEntries.length;i++) if (datEntryEdited(i)) n++;
+    return n;
+  }
+
+  function buildDatEditor(){
+    const items = buildDatItems();
+    const groups = {};
+    items.forEach(item => {
+      const key = item.isColor ? item.base : datEntries[item.idx].key;
+      const g = datGroupPrefix(key);
+      (groups[g] = groups[g] || []).push(item);
+    });
+    const groupNames = Object.keys(groups).sort();
+
+    let html = `<div class="toolrow">
+      <span class="stat-pill"><b>${datEntries.length}</b> settings</span>
+      <span class="stat-pill"><b id="datEditedCount">${datCountEdited()}</b> edited</span>
+      <button class="btn small" id="resetAllBtn">Reset all</button>
+    </div>`;
+
+    groupNames.forEach(g => {
+      const groupItems = groups[g];
+      html += `<div class="section-block dat-group-block" data-group="${esc(g)}" id="sec-${slug(g)}">
+        <div class="section-label">${esc(datGroupLabel(g))} <span class="count">(${groupItems.length})</span></div>
+        <div class="param-card" style="padding:2px 14px 10px;">`;
+      groupItems.forEach(item => { html += item.isColor ? datColorRowHtml(item) : datRowHtml(item.idx); });
+      html += `</div></div>`;
+    });
+
+    editorRoot.innerHTML = html;
+    bindDatEvents();
+    buildDatSectionNav(groupNames);
+    applyDatFilter();
+  }
+
+  function datRowHtml(idx){
+    const e = datEntries[idx];
+    const edited = datEntryEdited(idx);
+    return `
+      <div class="dat-row" data-idx="${idx}">
+        <div class="dat-row-label">
+          <span class="dat-row-name">${esc(datRowLabel(e.key))} ${edited?'<span class="changed-tag">EDITED</span>':''}</span>
+          <span class="dat-row-key">${esc(e.key)}</span>
+        </div>
+        <input type="number" class="dat-num-input${edited?' edited':''}" value="${formatDatDisplay(e.value)}" step="any" data-idx="${idx}">
+      </div>`;
+  }
+
+  // Groups color-triplet keys (base.red / base.green / base.blue [/ base.alpha]) into one
+  // swatch+hex row instead of three raw number fields with no visual feedback.
+  function buildDatItems(){
+    const byKey = {};
+    datEntries.forEach((e, idx) => { byKey[e.key] = idx; });
+    const used = new Set();
+    const items = [];
+    datEntries.forEach((e, idx) => {
+      if (used.has(idx)) return;
+      const m = /^(.*)\.red$/.exec(e.key);
+      if (m){
+        const base = m[1];
+        const gIdx = byKey[base+'.green'], bIdx = byKey[base+'.blue'];
+        if (gIdx !== undefined && bIdx !== undefined){
+          const group = { isColor:true, base, r:idx, g:gIdx, b:bIdx };
+          const aIdx = byKey[base+'.alpha'];
+          if (aIdx !== undefined) group.a = aIdx;
+          used.add(idx); used.add(gIdx); used.add(bIdx);
+          if (aIdx !== undefined) used.add(aIdx);
+          items.push(group);
+          return;
+        }
+      }
+      items.push({ isColor:false, idx });
+    });
+    return items;
+  }
+
+  function datColorGroupEdited(group){
+    return datEntryEdited(group.r) || datEntryEdited(group.g) || datEntryEdited(group.b) || (group.a !== undefined && datEntryEdited(group.a));
+  }
+  function datColorGroupLabel(base){
+    return humanizeWords(base.split('.').slice(1).join(' ') || base).replace(/\bColor$/i,'').trim() || humanizeWords(base);
+  }
+
+  function datColorRowHtml(group){
+    const rE = datEntries[group.r], gE = datEntries[group.g], bE = datEntries[group.b];
+    const hex = hexFromFloats(rE.value, gE.value, bE.value);
+    const edited = datColorGroupEdited(group);
+    const label = datColorGroupLabel(group.base);
+    const suffixes = 'red, green, blue' + (group.a!==undefined?', alpha':'');
+    return `
+      <div class="dat-row dat-color-row" data-r="${group.r}" data-g="${group.g}" data-b="${group.b}" ${group.a!==undefined?`data-a="${group.a}"`:''}>
+        <div class="dat-row-label">
+          <span class="dat-row-name">${esc(label)} ${edited?'<span class="changed-tag">EDITED</span>':''}</span>
+          <span class="dat-row-key">${esc(group.base)}.{${suffixes}}</span>
+        </div>
+        <button class="kf-swatch" style="background:${hex}">
+          <input type="color" class="dat-color-input" value="${hex}">
+        </button>
+        <input type="text" class="kf-hex dat-hex-input" value="${hex}" maxlength="7" spellcheck="false">
+        ${group.a!==undefined?`<input type="number" class="dat-alpha-input" value="${formatDatDisplay(datEntries[group.a].value)}" step="0.01" title="Alpha">`:''}
+      </div>`;
+  }
+
+  function formatDatDisplay(v){
+    const r = Math.round(v*1000)/1000;
+    return String(r);
+  }
+
+  function bindDatEvents(){
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (confirm('Reset every setting back to the file as originally loaded?')){ loadText(originalText, fileName); showToast('All changes reset.'); }
+    });
+
+    editorRoot.querySelectorAll('.dat-num-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = Number(inp.dataset.idx);
+        const v = parseFloat(inp.value);
+        if (Number.isNaN(v)) return;
+        datEntries[idx].value = v;
+        inp.classList.toggle('edited', datEntryEdited(idx));
+        refreshDatRowChrome(inp.closest('.dat-row'));
+      });
+    });
+
+    editorRoot.querySelectorAll('.dat-color-row').forEach(row => {
+      const rIdx = Number(row.dataset.r), gIdx = Number(row.dataset.g), bIdx = Number(row.dataset.b);
+      const aIdx = row.dataset.a !== undefined ? Number(row.dataset.a) : null;
+      const colorInput = row.querySelector('.dat-color-input');
+      const hexInput = row.querySelector('.dat-hex-input');
+      const alphaInput = row.querySelector('.dat-alpha-input');
+
+      const applyHex = (hex) => {
+        const [r,g,b] = floatsFromHex(hex);
+        datEntries[rIdx].value = r; datEntries[gIdx].value = g; datEntries[bIdx].value = b;
+        row.querySelector('.kf-swatch').style.background = hex;
+        colorInput.value = hex; hexInput.value = hex;
+        refreshDatRowChrome(row);
+      };
+      colorInput.addEventListener('input', () => applyHex(colorInput.value));
+      const commitHex = () => {
+        const hex = normalizeHex(hexInput.value);
+        if (!hex){ showToast('That is not a valid hex code — try something like #3399ff.'); return; }
+        applyHex(hex);
+      };
+      hexInput.addEventListener('change', commitHex);
+      hexInput.addEventListener('keydown', e => { if (e.key === 'Enter'){ commitHex(); hexInput.blur(); } });
+      if (alphaInput) alphaInput.addEventListener('input', () => {
+        const v = parseFloat(alphaInput.value); if (Number.isNaN(v)) return;
+        datEntries[aIdx].value = v;
+        refreshDatRowChrome(row);
+      });
+    });
+  }
+
+  function refreshDatRowChrome(row){
+    const nameEl = row.querySelector('.dat-row-name');
+    const tagEl = nameEl.querySelector('.changed-tag');
+    let edited;
+    if (row.classList.contains('dat-color-row')){
+      const group = { r:Number(row.dataset.r), g:Number(row.dataset.g), b:Number(row.dataset.b) };
+      if (row.dataset.a !== undefined) group.a = Number(row.dataset.a);
+      edited = datColorGroupEdited(group);
+    } else {
+      edited = datEntryEdited(Number(row.dataset.idx));
+    }
+    if (edited && !tagEl) nameEl.insertAdjacentHTML('beforeend', ' <span class="changed-tag">EDITED</span>');
+    if (!edited && tagEl) tagEl.remove();
+    const stat = document.getElementById('datEditedCount');
+    if (stat) stat.textContent = datCountEdited();
+  }
+
+  function buildDatSectionNav(groupNames){
+    let html = groupNames.map(g => `<button data-target="sec-${slug(g)}">${esc(datGroupLabel(g))}</button>`).join('');
+    sectionNav.innerHTML = html;
+    navScrollWrap.style.display = groupNames.length ? 'flex' : 'none';
+    enableHScroll(sectionNav);
+    sectionNav.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        const el = document.getElementById(b.dataset.target);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    requestAnimationFrame(updateNavArrows);
+  }
+
+  function applyDatFilter(){
+    const q = datFilter;
+    editorRoot.querySelectorAll('.dat-row').forEach(row => {
+      if (!q){ row.classList.remove('is-hidden'); return; }
+      const text = row.querySelector('.dat-row-name').textContent.toLowerCase() + ' ' + row.querySelector('.dat-row-key').textContent.toLowerCase();
+      row.classList.toggle('is-hidden', text.indexOf(q) === -1);
+    });
+    editorRoot.querySelectorAll('.dat-group-block').forEach(block => {
+      const visible = block.querySelectorAll('.dat-row:not(.is-hidden)').length;
+      block.style.display = (q && visible === 0) ? 'none' : '';
+    });
+  }
+
+  // ---------- .attr editor (flat attribute-based XML: SSAO/HBAO settings, time.xml, etc.) ----------
+  function attrEntryLabel(entry){
+    const distinguishing = ['name','hour'].map(n => entry.attrs.find(a=>a.name===n)).find(Boolean);
+    return distinguishing ? `${humanizeWords(entry.tag)} — ${distinguishing.value}` : humanizeWords(entry.tag);
+  }
+  function attrEntryEdited(entry){ return isAttrEntryEdited(entry); }
+  function attrCountEdited(){ return attrEntries.filter(attrEntryEdited).length; }
+  function isNumericAttr(v){ return /^-?\d+(\.\d+)?$/.test(String(v).trim()); }
+
+  function buildAttrEditor(){
+    const groups = {};
+    attrEntries.forEach((entry, idx) => { (groups[entry.tag] = groups[entry.tag] || []).push(idx); });
+    const groupNames = Object.keys(groups);
+
+    let html = `<div class="toolrow">
+      <span class="stat-pill"><b>${attrEntries.length}</b> entries</span>
+      <span class="stat-pill"><b id="attrEditedCount">${attrCountEdited()}</b> edited</span>
+      <button class="btn small" id="resetAllBtn">Reset all</button>
+    </div>`;
+
+    groupNames.forEach(tag => {
+      const idxs = groups[tag];
+      html += `<div class="section-block attr-group-block" id="sec-${slug(tag)}">
+        <div class="section-label">${esc(humanizeWords(tag))} <span class="count">(${idxs.length})</span></div>`;
+      idxs.forEach(idx => { html += attrEntryHtml(idx); });
+      html += `</div>`;
+    });
+
+    editorRoot.innerHTML = html;
+    bindAttrEvents();
+    buildAttrSectionNav(groupNames);
+    applyAttrFilter();
+  }
+
+  function attrEntryHtml(idx){
+    const entry = attrEntries[idx];
+    const edited = attrEntryEdited(entry);
+    const fields = entry.attrs.map(a => {
+      const val = attrValueOf(entry, a.name);
+      const numeric = isNumericAttr(a.value);
+      return `<div class="field">
+        <label>${esc(a.name)}</label>
+        <input type="${numeric?'number':'text'}" class="attr-input${attrValueOf(entry,a.name)!==a.value?' edited':''}"
+          value="${esc(val)}" ${numeric?'step="any"':''} data-idx="${idx}" data-attr="${esc(a.name)}">
+      </div>`;
+    }).join('');
+    return `
+      <div class="param-card attr-row" data-idx="${idx}">
+        <div class="card-head" style="cursor:default;">
+          <div class="card-main">
+            <div class="param-name">${esc(attrEntryLabel(entry))} ${edited?'<span class="changed-tag">EDITED</span>':''}</div>
+          </div>
+        </div>
+        <div class="card-body" style="display:block;border-top:none;padding-top:0;">
+          <div class="field-row" style="display:flex;flex-wrap:wrap;gap:10px;">${fields}</div>
+        </div>
+      </div>`;
+  }
+
+  function bindAttrEvents(){
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (confirm('Reset every setting back to the file as originally loaded?')){ loadText(originalText, fileName); showToast('All changes reset.'); }
+    });
+    editorRoot.querySelectorAll('.attr-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = Number(inp.dataset.idx), attrName = inp.dataset.attr;
+        const entry = attrEntries[idx];
+        setAttrValue(entry, attrName, inp.value);
+        inp.classList.toggle('edited', attrValueOf(entry, attrName) !== entry.attrs.find(a=>a.name===attrName).value);
+        const row = inp.closest('.attr-row');
+        const nameEl = row.querySelector('.param-name');
+        const tag = nameEl.querySelector('.changed-tag');
+        const edited = attrEntryEdited(entry);
+        if (edited && !tag) nameEl.insertAdjacentHTML('beforeend', ' <span class="changed-tag">EDITED</span>');
+        if (!edited && tag) tag.remove();
+        const stat = document.getElementById('attrEditedCount');
+        if (stat) stat.textContent = attrCountEdited();
+      });
+    });
+  }
+
+  function buildAttrSectionNav(groupNames){
+    let html = groupNames.map(tag => `<button data-target="sec-${slug(tag)}">${esc(humanizeWords(tag))}</button>`).join('');
+    sectionNav.innerHTML = html;
+    navScrollWrap.style.display = groupNames.length ? 'flex' : 'none';
+    enableHScroll(sectionNav);
+    sectionNav.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        const el = document.getElementById(b.dataset.target);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    requestAnimationFrame(updateNavArrows);
+  }
+
+  // ---------- tree-mode UI (weather.xml, clouds.xml, lensflare_*.xml) ----------
+  let treeNodeRegistry = {};
+  let treeNodeIdCounter = 0;
+  function registerTreeNode(node){
+    const id = treeNodeIdCounter++;
+    treeNodeRegistry[id] = node;
+    return id;
+  }
+
+  function argbFromPacked(hex8){
+    const clean = hex8.replace(/^0x/i,'').padStart(8,'0');
+    const a = parseInt(clean.slice(0,2),16);
+    return { a, rgbHex: '#' + clean.slice(2,8).toLowerCase() };
+  }
+  function packedFromArgb(a, rgbHex){
+    const aHex = Math.max(0,Math.min(255,Math.round(a))).toString(16).padStart(2,'0');
+    const digits = (aHex + rgbHex.replace('#','')).toUpperCase();
+    return '0x' + digits;
+  }
+
+  function classifyTreeField(child){
+    const sub = findItemList(child, 0);
+    if (sub && sub.items.length > 0) return { kind:'sublist', sub };
+    const attrs = child.attrs;
+    if (attrs.length === 3 && ['x','y','z'].every(a => attrs.some(at=>at.name===a))) return { kind:'vector' };
+    if (attrs.length === 1 && attrs[0].name === 'value' && /^0x[0-9A-Fa-f]{8}$/i.test(attrs[0].value)) return { kind:'colorHex' };
+    if (attrs.length) return { kind:'attrs' };
+    if (treeMainTextChild(child)) return { kind:'text' };
+    return { kind:'empty' };
+  }
+
+  function treeFieldEdited(child, cls){
+    if (cls.kind === 'vector' || cls.kind === 'colorHex' || cls.kind === 'attrs'){
+      return child.attrs.some(a => treeAttrEdited(child, a.name));
+    }
+    if (cls.kind === 'text') return treeTextEdited(child);
+    return false;
+  }
+
+  function renderTreeField(child, label){
+    const cls = classifyTreeField(child);
+    if (cls.kind === 'sublist' || cls.kind === 'empty') return '';
+    const id = registerTreeNode(child);
+    const edited = treeFieldEdited(child, cls);
+    const editedTag = edited ? ' <span class="changed-tag">EDITED</span>' : '';
+
+    if (cls.kind === 'vector'){
+      const inputs = ['x','y','z'].map(axis => {
+        const v = treeAttrValue(child, axis);
+        return `<input type="number" class="tree-vec-input" data-node="${id}" data-attr="${axis}" value="${esc(v)}" step="any" title="${axis}">`;
+      }).join('');
+      return `<div class="dat-row" data-node="${id}">
+        <div class="dat-row-label"><span class="dat-row-name">${esc(label)}${editedTag}</span><span class="dat-row-key">${esc(child.name)} (x, y, z)</span></div>
+        <div style="display:flex;gap:6px;">${inputs}</div>
+      </div>`;
+    }
+    if (cls.kind === 'colorHex'){
+      const hex8 = treeAttrValue(child, 'value');
+      const { a, rgbHex } = argbFromPacked(hex8);
+      return `<div class="dat-row dat-color-row" data-node="${id}" data-argb="1">
+        <div class="dat-row-label"><span class="dat-row-name">${esc(label)}${editedTag}</span><span class="dat-row-key">${esc(child.name)} (ARGB)</span></div>
+        <button class="kf-swatch" style="background:${rgbHex}"><input type="color" class="tree-color-input" value="${rgbHex}"></button>
+        <input type="text" class="kf-hex tree-hex-input" value="${rgbHex}" maxlength="7" spellcheck="false">
+        <input type="number" class="dat-alpha-input" value="${a}" min="0" max="255" step="1" title="Alpha (0-255)">
+      </div>`;
+    }
+    if (cls.kind === 'attrs'){
+      const fields = child.attrs.map(a => {
+        const v = treeAttrValue(child, a.name);
+        const numeric = /^-?\d+(\.\d+)?$/.test(a.value);
+        return `<div class="field"><label>${esc(a.name)}</label>
+          <input type="${numeric?'number':'text'}" class="tree-attr-input" data-node="${id}" data-attr="${esc(a.name)}" value="${esc(v)}" ${numeric?'step="any"':''}></div>`;
+      }).join('');
+      return `<div class="dat-row" style="align-items:flex-start;" data-node="${id}">
+        <div class="dat-row-label"><span class="dat-row-name">${esc(label)}${editedTag}</span><span class="dat-row-key">${esc(child.name)}</span></div>
+        <div class="field-row">${fields}</div>
+      </div>`;
+    }
+    // text
+    const v = treeTextOf(child);
+    return `<div class="dat-row" data-node="${id}">
+      <div class="dat-row-label"><span class="dat-row-name">${esc(label)}${editedTag}</span><span class="dat-row-key">${esc(child.name)}</span></div>
+      <input type="text" class="tree-text-input" data-node="${id}" value="${esc(v)}" style="width:180px;">
+    </div>`;
+  }
+
+  function renderTreeSublist(containerChild, sub){
+    const items = sub.items;
+    let html = `<div class="section-label" style="margin-top:16px;">${esc(humanizeWords(containerChild.name))} <span class="count">(${items.length})</span></div>`;
+    items.forEach((subItem, subIdx) => {
+      const label = treeEntryLabel(subItem, subIdx);
+      let subFields = '';
+      treeElementChildren(subItem).forEach(child => {
+        const cls = classifyTreeField(child);
+        if (cls.kind === 'sublist') return; // cap at two levels — deep enough for these files
+        subFields += renderTreeField(child, humanizeWords(child.name));
+      });
+      html += `<div class="param-card tree-entry" style="margin-bottom:6px;">
+        <div class="card-head"><svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          <div class="card-main"><div class="param-name">${esc(label)}</div></div>
+        </div>
+        <div class="card-body">${subFields}</div>
+      </div>`;
+    });
+    return html;
+  }
+
+  function treeEntryCardHtml(item, idx){
+    const label = treeEntryLabel(item, idx);
+    let fieldsHtml = '', sublistHtml = '';
+    treeElementChildren(item).forEach(child => {
+      const cls = classifyTreeField(child);
+      if (cls.kind === 'sublist') sublistHtml += renderTreeSublist(child, cls.sub);
+      else fieldsHtml += renderTreeField(child, humanizeWords(child.name));
+    });
+    return `<div class="param-card tree-entry" data-entry-idx="${idx}">
+      <div class="card-head"><svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <div class="card-main"><div class="param-name">${esc(label)}</div></div>
+      </div>
+      <div class="card-body">${fieldsHtml}${sublistHtml}</div>
+    </div>`;
+  }
+
+  function countTreeEdited(){
+    let n = 0;
+    Object.values(treeNodeRegistry).forEach(node => {
+      const cls = classifyTreeField(node);
+      if (treeFieldEdited(node, cls)) n++;
+    });
+    return n;
+  }
+
+  function buildTreeEditor(){
+    treeNodeRegistry = {}; treeNodeIdCounter = 0;
+    const rootEl = treeNodes.find(n => n.type === 'element');
+    treeList = rootEl ? findItemList(rootEl, 0) : null;
+    if (!treeList || !treeList.items.length){
+      editorRoot.innerHTML = '<div class="detail-empty" style="padding:40px 20px;text-align:center;color:var(--text-dim);">Could not find a list of entries in this file.</div>';
+      navScrollWrap.style.display = 'none';
+      return;
+    }
+    let html = `<div class="toolrow">
+      <span class="stat-pill"><b>${treeList.items.length}</b> entries</span>
+      <span class="stat-pill"><b id="treeEditedCount">${countTreeEdited()}</b> edited</span>
+      <button class="btn small" id="resetAllBtn">Reset all</button>
+    </div>`;
+    html += `<div class="section-block" id="sec-entries">`;
+    treeList.items.forEach((item, idx) => { html += treeEntryCardHtml(item, idx); });
+    html += `</div>`;
+    editorRoot.innerHTML = html;
+    bindTreeEvents();
+    navScrollWrap.style.display = 'none';
+    applyTreeFilter();
+  }
+
+  function bindTreeEvents(){
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (confirm('Reset every entry back to the file as originally loaded?')){ loadText(originalText, fileName); showToast('All changes reset.'); }
+    });
+    editorRoot.querySelectorAll('.tree-entry > .card-head').forEach(head => {
+      head.addEventListener('click', () => head.closest('.tree-entry').classList.toggle('open'));
+    });
+
+    editorRoot.querySelectorAll('.tree-attr-input, .tree-vec-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const node = treeNodeRegistry[Number(inp.dataset.node)];
+        const v = parseFloat(inp.value);
+        if (!Number.isNaN(v) || inp.value === '' || inp.value === '-'){
+          treeSetAttr(node, inp.dataset.attr, inp.value);
+          refreshTreeRowChrome(inp.closest('.dat-row'), node);
+        }
+      });
+    });
+    editorRoot.querySelectorAll('.tree-text-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const node = treeNodeRegistry[Number(inp.dataset.node)];
+        treeSetElementText(node, inp.value);
+        refreshTreeRowChrome(inp.closest('.dat-row'), node);
+      });
+    });
+    editorRoot.querySelectorAll('.dat-color-row[data-argb]').forEach(row => {
+      const node = treeNodeRegistry[Number(row.dataset.node)];
+      const colorInput = row.querySelector('.tree-color-input');
+      const hexInput = row.querySelector('.tree-hex-input');
+      const alphaInput = row.querySelector('.dat-alpha-input');
+      const applyColor = (rgbHex) => {
+        const a = parseFloat(alphaInput.value) || 0;
+        treeSetAttr(node, 'value', packedFromArgb(a, rgbHex));
+        row.querySelector('.kf-swatch').style.background = rgbHex;
+        colorInput.value = rgbHex; hexInput.value = rgbHex;
+        refreshTreeRowChrome(row, node);
+      };
+      colorInput.addEventListener('input', () => applyColor(colorInput.value));
+      const commitHex = () => {
+        const hex = normalizeHex(hexInput.value);
+        if (!hex){ showToast('That is not a valid hex code — try something like #3399ff.'); return; }
+        applyColor(hex);
+      };
+      hexInput.addEventListener('change', commitHex);
+      hexInput.addEventListener('keydown', e => { if (e.key==='Enter'){ commitHex(); hexInput.blur(); } });
+      alphaInput.addEventListener('input', () => applyColor(colorInput.value));
+    });
+  }
+
+  function refreshTreeRowChrome(row, node){
+    if (row){
+      const cls = classifyTreeField(node);
+      const edited = treeFieldEdited(node, cls);
+      const nameEl = row.querySelector('.dat-row-name');
+      const tagEl = nameEl.querySelector('.changed-tag');
+      if (edited && !tagEl) nameEl.insertAdjacentHTML('beforeend', ' <span class="changed-tag">EDITED</span>');
+      if (!edited && tagEl) tagEl.remove();
+    }
+    const stat = document.getElementById('treeEditedCount');
+    if (stat) stat.textContent = countTreeEdited();
+  }
+
+  function applyTreeFilter(){
+    const q = treeFilter;
+    editorRoot.querySelectorAll('#sec-entries > .tree-entry').forEach(card => {
+      if (!q){ card.classList.remove('is-hidden'); return; }
+      card.classList.toggle('is-hidden', card.querySelector('.param-name').textContent.toLowerCase().indexOf(q) === -1);
+    });
+  }
+
+  // ---------- cloudkey-mode UI (cloudkeyframes.xml — 14-point day/night color curves) ----------
+  const CK_FIELD_LABELS = {
+    CloudColor:"Cloud color", CloudLightColor:"Cloud light color", CloudAmbientColor:"Cloud ambient color",
+    CloudBounceColor:"Cloud bounce color", CloudEastColor:"Cloud color (east)", CloudWestColor:"Cloud color (west)",
+    CloudSkyColor:"Cloud sky color", CloudScaleFillColors:"Cloud scale/fill color"
+  };
+  let ckFieldRegistry = {};
+  let ckFieldIdCounter = 0;
+  let ckHours = CLOUDKEY_HOURS;
+
+  function ckParseKeyData(keyDataNode){
+    const numEntriesNode = treeFindFirst(keyDataNode.children, 'numKeyEntries');
+    const n = parseInt(treeAttrValue(numEntriesNode, 'value'), 10);
+    const keyEntryNode = treeFindFirst(keyDataNode.children, 'keyEntryData');
+    const textNode = treeMainTextChild(keyEntryNode);
+    const tokens = textNode.raw.trim().split(/\s+/).map(Number);
+    const cols = tokens.length / n;
+    const rows = [];
+    for (let i=0;i<n;i++) rows.push(tokens.slice(i*cols, (i+1)*cols));
+    return { n, cols, rows, textNode, keyEntryNode };
+  }
+  function ckWriteKeyData(kd){
+    const lines = kd.rows.map(r => r.map(v => Number(v).toFixed(6)).join('\t'));
+    kd.textNode.raw = '\n\t\t\t  ' + lines.join('\n\t\t\t  ') + '\n\t\t\t';
+  }
+  function ckFieldEdited(kd){ return kd.textNode.raw !== kd.textNode._origRaw; }
+
+  function ckColorFieldHtml(fieldNode, label){
+    const keyData = treeFindFirst(fieldNode.children, 'keyData');
+    if (!keyData) return '';
+    const kd = ckParseKeyData(keyData);
+    const id = ckFieldIdCounter++;
+    ckFieldRegistry[id] = kd;
+    const dayIdx = ckHours.indexOf(12), nightIdx = ckHours.indexOf(0);
+    const rowHex = i => hexFromFloats(kd.rows[i][1], kd.rows[i][2], kd.rows[i][3]);
+    const stops = ckHours.map((h,idx) => ({ hour:h, hex: rowHex(idx) }));
+    const edited = ckFieldEdited(kd);
+    const strip = ckHours.map((h,idx) => `
+      <div class="kf-point">
+        <button class="kf-swatch" style="background:${rowHex(idx)}"><input type="color" class="ck-color-input" data-field="${id}" data-idx="${idx}" value="${rowHex(idx)}"></button>
+        <input type="text" class="kf-hex ck-hex-input" data-field="${id}" data-idx="${idx}" value="${rowHex(idx)}" maxlength="7" spellcheck="false">
+        <span class="kf-hour">${hourLabel(h)}</span>
+      </div>`).join('');
+    return `
+    <div class="param-card tree-entry ck-color-card" data-field="${id}">
+      <div class="card-head">
+        <svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <div class="card-main">
+          <div class="param-name">${esc(label)} ${edited?'<span class="changed-tag">EDITED</span>':''}</div>
+          <div class="preview-wrap"><div class="gradient-bar" style="background:${gradientCss(stops)}"></div></div>
+        </div>
+        <div class="quickrow" onclick="event.stopPropagation()">
+          <div class="quick-item"><span class="quick-label">Day</span>
+            <button class="kf-swatch quick-swatch" style="background:${rowHex(dayIdx)}"><input type="color" class="ck-color-input" data-field="${id}" data-idx="${dayIdx}" value="${rowHex(dayIdx)}"></button>
+          </div>
+          <div class="quick-item"><span class="quick-label">Night</span>
+            <button class="kf-swatch quick-swatch" style="background:${rowHex(nightIdx)}"><input type="color" class="ck-color-input" data-field="${id}" data-idx="${nightIdx}" value="${rowHex(nightIdx)}"></button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body"><div class="keyframe-strip">${strip}</div></div>
+    </div>`;
+  }
+
+  function ckEntryCardHtml(item, idx){
+    const label = treeEntryLabel(item, idx);
+    const settings = treeFindFirst(item.children, 'Settings');
+    let html = '';
+    if (settings){
+      Object.keys(CK_FIELD_LABELS).forEach(tag => {
+        const fieldNode = treeFindFirst(settings.children, tag);
+        if (fieldNode) html += ckColorFieldHtml(fieldNode, CK_FIELD_LABELS[tag]);
+      });
+    }
+    return `<div class="param-card tree-entry" data-entry-idx="${idx}">
+      <div class="card-head"><svg class="card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <div class="card-main"><div class="param-name">${esc(label)}</div></div>
+      </div>
+      <div class="card-body">${html}</div>
+    </div>`;
+  }
+
+  function ckCountEdited(){
+    return Object.values(ckFieldRegistry).filter(ckFieldEdited).length;
+  }
+
+  function buildCloudkeyEditor(){
+    ckFieldRegistry = {}; ckFieldIdCounter = 0;
+    const rootEl = ckNodes.find(n => n.type === 'element');
+    const kfTimesNode = treeFindFirst(rootEl.children, 'KeyframeTimes');
+    ckHours = treeTextOf(kfTimesNode).trim().split(/\s+/).map(Number);
+    const settingsMap = treeFindFirst(rootEl.children, 'SettingsMap');
+    ckItems = settingsMap ? treeElementChildren(settingsMap).filter(c => c.name === 'Item') : [];
+
+    let html = `<div class="toolrow">
+      <span class="stat-pill"><b>${ckItems.length}</b> weather types</span>
+      <span class="stat-pill"><b id="ckEditedCount">0</b> edited</span>
+      <button class="btn small" id="resetAllBtn">Reset all</button>
+    </div>`;
+    html += `<div class="section-block" id="sec-ckentries">`;
+    ckItems.forEach((item, idx) => { html += ckEntryCardHtml(item, idx); });
+    html += `</div>`;
+    editorRoot.innerHTML = html;
+    document.getElementById('ckEditedCount').textContent = ckCountEdited();
+    bindCloudkeyEvents();
+    navScrollWrap.style.display = 'none';
+    applyCkFilter();
+  }
+
+  function bindCloudkeyEvents(){
+    document.getElementById('resetAllBtn').addEventListener('click', () => {
+      if (confirm('Reset every weather type back to the file as originally loaded?')){ loadText(originalText, fileName); showToast('All changes reset.'); }
+    });
+    editorRoot.querySelectorAll('.tree-entry > .card-head').forEach(head => {
+      head.addEventListener('click', () => head.closest('.tree-entry').classList.toggle('open'));
+    });
+
+    editorRoot.querySelectorAll('.ck-color-card').forEach(card => {
+      const id = Number(card.dataset.field);
+      const kd = ckFieldRegistry[id];
+      function applyIdx(idx, hex){
+        const [r,g,b] = floatsFromHex(hex);
+        kd.rows[idx][1] = r; kd.rows[idx][2] = g; kd.rows[idx][3] = b;
+        ckWriteKeyData(kd);
+        card.querySelectorAll(`[data-field="${id}"][data-idx="${idx}"]`).forEach(el => {
+          if (el.classList.contains('ck-color-input')) el.value = hex;
+          if (el.classList.contains('ck-hex-input')) el.value = hex;
+          const sw = el.closest('.kf-swatch'); if (sw) sw.style.background = hex;
+        });
+        refreshCkCardChrome(card, kd);
+      }
+      card.querySelectorAll('.ck-color-input').forEach(inp => {
+        inp.addEventListener('input', () => applyIdx(Number(inp.dataset.idx), inp.value));
+      });
+      card.querySelectorAll('.ck-hex-input').forEach(inp => {
+        const commit = () => {
+          const hex = normalizeHex(inp.value);
+          if (!hex){ showToast('That is not a valid hex code — try something like #3399ff.'); return; }
+          applyIdx(Number(inp.dataset.idx), hex);
+        };
+        inp.addEventListener('change', commit);
+        inp.addEventListener('keydown', e => { if (e.key==='Enter'){ commit(); inp.blur(); } });
+      });
+    });
+  }
+
+  function refreshCkCardChrome(card, kd){
+    const edited = ckFieldEdited(kd);
+    const nameEl = card.querySelector('.param-name');
+    const tagEl = nameEl.querySelector('.changed-tag');
+    if (edited && !tagEl) nameEl.insertAdjacentHTML('beforeend', ' <span class="changed-tag">EDITED</span>');
+    if (!edited && tagEl) tagEl.remove();
+    const stops = ckHours.map((h,idx) => ({ hour:h, hex: hexFromFloats(kd.rows[idx][1],kd.rows[idx][2],kd.rows[idx][3]) }));
+    card.querySelector('.gradient-bar').style.background = gradientCss(stops);
+    const stat = document.getElementById('ckEditedCount');
+    if (stat) stat.textContent = ckCountEdited();
+  }
+
+  function applyCkFilter(){
+    const q = ckFilter;
+    editorRoot.querySelectorAll('#sec-ckentries > .tree-entry').forEach(card => {
+      if (!q){ card.classList.remove('is-hidden'); return; }
+      card.classList.toggle('is-hidden', card.querySelector('.param-name').textContent.toLowerCase().indexOf(q) === -1);
+    });
+  }
+
+  function applyAttrFilter(){
+    const q = attrFilter;
+    editorRoot.querySelectorAll('.attr-row').forEach(row => {
+      if (!q){ row.classList.remove('is-hidden'); return; }
+      row.classList.toggle('is-hidden', row.querySelector('.param-name').textContent.toLowerCase().indexOf(q) === -1);
+    });
+    editorRoot.querySelectorAll('.attr-group-block').forEach(block => {
+      const visible = block.querySelectorAll('.attr-row:not(.is-hidden)').length;
+      block.style.display = (q && visible === 0) ? 'none' : '';
+    });
+  }
+
+  searchInput.addEventListener('input', () => {
+    if (currentFormat === 'dat'){
+      datFilter = searchInput.value.trim().toLowerCase();
+      applyDatFilter();
+    } else if (currentFormat === 'attr'){
+      attrFilter = searchInput.value.trim().toLowerCase();
+      applyAttrFilter();
+    } else if (currentFormat === 'tree'){
+      treeFilter = searchInput.value.trim().toLowerCase();
+      applyTreeFilter();
+    } else if (currentFormat === 'cloudkey'){
+      ckFilter = searchInput.value.trim().toLowerCase();
+      applyCkFilter();
+    } else {
+      currentFilter = searchInput.value.trim().toLowerCase();
+      applyFilter();
+    }
+  });
+
+  // ---------- FILE LOAD / SAVE ----------
+  function loadText(text, name){
+    originalText = text;
+    fileName = name;
+    currentFormat = detectFormat(text);
+    searchInput.value = '';
+
+    if (currentFormat === 'dat'){
+      const parsed = parseDat(text);
+      datLines = parsed.lines;
+      datEntries = parsed.entries;
+      datOriginalSnapshot = datEntries.map(e => e.value);
+      datFilter = '';
+      searchInput.placeholder = 'Search settings (e.g. rain, sky, weather)…';
+
+      filenameTag.textContent = fileName;
+      exportBtn.disabled = false;
+      emptyState.style.display = 'none';
+      fileRow.style.display = 'flex';
+      searchRow.style.display = 'flex';
+      editorRoot.style.display = 'block';
+      buildDatEditor();
+      return;
+    }
+
+    if (currentFormat === 'attr'){
+      const parsed = parseAttrXML(text);
+      attrSegs = parsed.segments;
+      attrEntries = parsed.entries;
+      attrFilter = '';
+      searchInput.placeholder = 'Search settings…';
+
+      filenameTag.textContent = fileName;
+      exportBtn.disabled = false;
+      emptyState.style.display = 'none';
+      fileRow.style.display = 'flex';
+      searchRow.style.display = 'flex';
+      editorRoot.style.display = 'block';
+      buildAttrEditor();
+      return;
+    }
+
+    if (currentFormat === 'tree'){
+      treeNodes = parseTree(text);
+      snapshotTreeText(treeNodes);
+      treeFilter = '';
+      searchInput.placeholder = 'Search entries by name…';
+
+      filenameTag.textContent = fileName;
+      exportBtn.disabled = false;
+      emptyState.style.display = 'none';
+      fileRow.style.display = 'flex';
+      searchRow.style.display = 'flex';
+      editorRoot.style.display = 'block';
+      buildTreeEditor();
+      return;
+    }
+
+    if (currentFormat === 'cloudkey'){
+      ckNodes = parseTree(text);
+      snapshotTreeText(ckNodes);
+      ckFilter = '';
+      searchInput.placeholder = 'Search weather types…';
+
+      filenameTag.textContent = fileName;
+      exportBtn.disabled = false;
+      emptyState.style.display = 'none';
+      fileRow.style.display = 'flex';
+      searchRow.style.display = 'flex';
+      editorRoot.style.display = 'block';
+      buildCloudkeyEditor();
+      return;
+    }
+
+    const parsed = parseXML(text);
+    flatSegments = parsed.segments;
+    cycles = parsed.regions;
+    currentRegionIdx = 0;
+    currentFilter = '';
+    searchInput.placeholder = 'Search parameters (e.g. sky, fog, exposure)…';
+    originalSnapshot = cycles.map(r => {
+      const m = {};
+      Object.keys(r.params).forEach(tag => { m[tag] = r.params[tag].values.slice(); });
+      return m;
+    });
+
+    filenameTag.textContent = fileName;
+    exportBtn.disabled = false;
+    emptyState.style.display = 'none';
+    fileRow.style.display = 'flex';
+    searchRow.style.display = 'flex';
+    editorRoot.style.display = 'block';
+    buildEditor();
+  }
+
+  function handleFile(file){
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        loadText(String(e.target.result), file.name);
+        showToast(`Opened ${file.name}`);
+      } catch(err){
+        showToast(err.message);
+        console.error(err);
+      }
+    };
+    reader.onerror = () => showToast("Couldn't read that file.");
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function downloadExport(){
+    let out, mime;
+    if (currentFormat === 'dat'){
+      if (!datEntries.length) return;
+      out = serializeDat(datLines, datEntries);
+      mime = 'text/plain';
+    } else if (currentFormat === 'attr'){
+      if (!attrEntries.length) return;
+      out = serializeAttrXML(attrSegs);
+      mime = 'application/xml';
+    } else if (currentFormat === 'tree'){
+      if (!treeNodes.length) return;
+      out = serializeTree(treeNodes);
+      mime = 'application/xml';
+    } else if (currentFormat === 'cloudkey'){
+      if (!ckNodes.length) return;
+      out = serializeTree(ckNodes);
+      mime = 'application/xml';
+    } else {
+      if (!cycles.length) return;
+      out = serialize();
+      mime = 'application/xml';
+    }
+    const blob = new Blob([out], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName || (currentFormat === 'dat' ? 'visualsettings.dat' : 'timecycle.xml');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${a.download}`);
+  }
+
+  // Collects every keyframe the user actually touched in the currently open file, by region
+  // name and tag, as {indices, values} pairs — so re-applying it elsewhere only overwrites
+  // the specific hours that were changed here, never a whole day/night curve at once.
+  function computeSessionDiff(){
+    const diff = {}; // regionName -> tag -> { indices:[...], values:[...] }
+    let changedCount = 0;
+    cycles.forEach((r, idx) => {
+      const snap = originalSnapshot[idx] || {};
+      const tagDiffs = {};
+      Object.keys(r.params).forEach(tag => {
+        const cur = r.params[tag].values;
+        const orig = snap[tag];
+        if (!orig) return;
+        const indices = [], values = [];
+        for (let i=0;i<cur.length;i++){
+          if (Math.abs(cur[i] - orig[i]) > 1e-6){ indices.push(i); values.push(cur[i]); }
+        }
+        if (indices.length){ tagDiffs[tag] = { indices, values }; changedCount += indices.length; }
+      });
+      if (Object.keys(tagDiffs).length) diff[r.name] = tagDiffs;
+    });
+    return { diff, changedCount };
+  }
+
+  function applyDiffToText(targetText, diff){
+    const parsed = parseXML(targetText);
+    let applied = 0;
+    parsed.regions.forEach(r => {
+      const tagDiffs = diff[r.name];
+      if (!tagDiffs) return;
+      Object.keys(tagDiffs).forEach(tag => {
+        if (!r.params[tag]) return;
+        const { indices, values } = tagDiffs[tag];
+        indices.forEach((idx, i) => { r.params[tag].values[idx] = values[i]; applied++; });
+      });
+    });
+    return { text: serialize(parsed.segments), applied };
+  }
+
+  function computeDatSessionDiff(){
+    const diff = {};
+    let changedCount = 0;
+    datEntries.forEach((e, idx) => {
+      if (datEntryEdited(idx)){ diff[e.key] = e.value; changedCount++; }
+    });
+    return { diff, changedCount };
+  }
+
+  function applyDatDiffToText(targetText, diff){
+    const parsed = parseDat(targetText);
+    let applied = 0;
+    parsed.entries.forEach(e => {
+      if (Object.prototype.hasOwnProperty.call(diff, e.key)){ e.value = diff[e.key]; applied++; }
+    });
+    return { text: serializeDat(parsed.lines, parsed.entries), applied };
+  }
+
+  function attrEntryKey(entry, occurrenceIdx){
+    const distinguishing = ['name','hour'].map(n => entry.attrs.find(a=>a.name===n)).find(Boolean);
+    return distinguishing ? `${entry.tag}::${distinguishing.value}` : `${entry.tag}::#${occurrenceIdx}`;
+  }
+  function computeAttrSessionDiff(){
+    const diff = {};
+    let changedCount = 0;
+    const seenPerTag = {};
+    attrEntries.forEach(entry => {
+      seenPerTag[entry.tag] = (seenPerTag[entry.tag] || 0);
+      const key = attrEntryKey(entry, seenPerTag[entry.tag]);
+      seenPerTag[entry.tag]++;
+      Object.keys(entry.current).forEach(attrName => {
+        const orig = entry.attrs.find(a=>a.name===attrName).value;
+        if (entry.current[attrName] !== orig){
+          diff[key] = diff[key] || {};
+          diff[key][attrName] = entry.current[attrName];
+          changedCount++;
+        }
+      });
+    });
+    return { diff, changedCount };
+  }
+  function applyAttrDiffToText(targetText, diff){
+    const parsed = parseAttrXML(targetText);
+    let applied = 0;
+    const seenPerTag = {};
+    parsed.entries.forEach(entry => {
+      seenPerTag[entry.tag] = (seenPerTag[entry.tag] || 0);
+      const key = attrEntryKey(entry, seenPerTag[entry.tag]);
+      seenPerTag[entry.tag]++;
+      const attrDiff = diff[key];
+      if (!attrDiff) return;
+      Object.keys(attrDiff).forEach(attrName => {
+        if (entry.attrs.some(a=>a.name===attrName)){ setAttrValue(entry, attrName, attrDiff[attrName]); applied++; }
+      });
+    });
+    return { text: serializeAttrXML(parsed.segments), applied };
+  }
+
+  function handleApplyToFile(file){
+    if (!file) return;
+    if (currentFormat === 'tree' || currentFormat === 'cloudkey'){
+      showToast("Applying to another file isn't available yet for this file type — download and reopen instead.");
+      return;
+    }
+    if (currentFormat === 'attr'){
+      const { diff, changedCount } = computeAttrSessionDiff();
+      if (!changedCount){ showToast("You haven't changed anything in this file yet."); return; }
+      const reader3 = new FileReader();
+      reader3.onload = e => {
+        let result;
+        try { result = applyAttrDiffToText(String(e.target.result), diff); }
+        catch(err){ showToast(err.message); console.error(err); return; }
+        if (!result.applied){ showToast(`${file.name} doesn't share any of the changed fields — nothing applied.`); return; }
+        const blob = new Blob([result.text], {type:'application/xml'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = file.name;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Applied ${result.applied} value${result.applied===1?'':'s'} to ${file.name} — downloaded.`);
+      };
+      reader3.onerror = () => showToast("Couldn't read that file.");
+      reader3.readAsText(file, 'utf-8');
+      return;
+    }
+    if (currentFormat === 'dat'){
+      const { diff, changedCount } = computeDatSessionDiff();
+      if (!changedCount){ showToast("You haven't changed anything in this file yet."); return; }
+      const reader2 = new FileReader();
+      reader2.onload = e => {
+        let result;
+        try { result = applyDatDiffToText(String(e.target.result), diff); }
+        catch(err){ showToast(err.message); console.error(err); return; }
+        if (!result.applied){ showToast(`${file.name} doesn't share any of the changed keys — nothing applied.`); return; }
+        const blob = new Blob([result.text], {type:'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = file.name;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Applied ${result.applied} value${result.applied===1?'':'s'} to ${file.name} — downloaded.`);
+      };
+      reader2.onerror = () => showToast("Couldn't read that file.");
+      reader2.readAsText(file, 'utf-8');
+      return;
+    }
+
+    const { diff, changedCount } = computeSessionDiff();
+    if (!changedCount){ showToast("You haven't changed anything in this file yet."); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      let result;
+      try { result = applyDiffToText(String(e.target.result), diff); }
+      catch(err){ showToast(err.message); console.error(err); return; }
+      if (!result.applied){ showToast(`${file.name} doesn't share any of the changed fields — nothing applied.`); return; }
+      const blob = new Blob([result.text], {type:'application/xml'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = file.name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Applied ${result.applied} value${result.applied===1?'':'s'} to ${file.name} — downloaded.`);
+    };
+    reader.onerror = () => showToast("Couldn't read that file.");
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
+  // ---------- EVENTS ----------
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('dropTarget').addEventListener('click', () => fileInput.click());
+  document.getElementById('loadBtn2').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+  exportBtn.addEventListener('click', downloadExport);
+
+  const applyToFileInput = document.getElementById('applyToFileInput');
+  document.getElementById('applyToFileBtn').addEventListener('click', () => {
+    if (!cycles.length && !datEntries.length && !attrEntries.length && !treeNodes.length && !ckNodes.length){ showToast('Open a file first.'); return; }
+    applyToFileInput.click();
+  });
+  applyToFileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleApplyToFile(e.target.files[0]);
+    applyToFileInput.value = '';
+  });
+
+  document.addEventListener('dragover', e => e.preventDefault());
+  document.addEventListener('drop', e => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  document.getElementById('dropTarget').addEventListener('dragover', e => {
+    e.preventDefault(); e.currentTarget.classList.add('dragover');
+  });
+  document.getElementById('dropTarget').addEventListener('dragleave', e => {
+    e.currentTarget.classList.remove('dragover');
+  });
+})();
+</script>
+</body>
+</html>
