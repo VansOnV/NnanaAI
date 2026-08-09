@@ -207,6 +207,33 @@
   .file-dl { width: 30px; height: 30px; border-radius: 50%; background: #232325; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .file-dl svg { width: 14px; height: 14px; color: #d8d8d8; }
 
+  /* Limit / paywall card */
+  .limit-card {
+    background: #17130d;
+    border: 1px solid #332818;
+    border-radius: 18px;
+    padding: 18px 18px 16px;
+    max-width: 86%;
+    margin: 6px 0;
+  }
+  .limit-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(160deg, #4a3a17, #241b0a);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .limit-icon svg { width: 22px; height: 22px; color: #f5b942; }
+  .limit-title { font-size: 15.5px; font-weight: 700; color: #f0f0f0; margin-bottom: 5px; }
+  .limit-sub { font-size: 13px; color: #a19a8f; line-height: 1.5; margin-bottom: 14px; }
+  .limit-upgrade-btn {
+    width: 100%; background: #f5b942; color: #1a1300; border: none;
+    border-radius: 22px; padding: 12px 0; font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.2s ease;
+  }
+  .limit-upgrade-btn:active { transform: scale(0.97); }
+  .limit-upgrade-btn:disabled { opacity: 0.6; }
+  .limit-note { font-size: 11px; color: #5f5b52; text-align: center; margin-top: 9px; }
+
   /* Input area */
   .input-wrap { padding: 8px 16px 24px; flex-shrink: 0; }
   .input-card {
@@ -342,6 +369,8 @@
   let busy = false;
   let userName = 'Vans';
   let hasBuiltMod = false;
+  let hasFixedOnce = false;
+  let limitReached = false;
   let modVersion = 1;
 
   function haptic(pattern) {
@@ -447,6 +476,37 @@
     chatScroll.appendChild(row);
     scrollToBottom();
     haptic([10, 40, 10]);
+  }
+
+  function addLimitCard() {
+    const row = document.createElement('div');
+    row.className = 'bubble-row bot';
+    const card = document.createElement('div');
+    card.className = 'limit-card';
+    card.innerHTML = `
+      <div class="limit-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="limit-title">Daily limit reached</div>
+      <div class="limit-sub">You've used all your free script fixes for today. This resets in 30 days — or upgrade to Nnana Pro for unlimited builds and fixes.</div>
+      <button class="limit-upgrade-btn">Upgrade to Nnana Pro</button>
+      <div class="limit-note">Demo only — no real purchase happens here</div>
+    `;
+    const btn = card.querySelector('.limit-upgrade-btn');
+    btn.addEventListener('click', () => {
+      haptic([10, 20, 10]);
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Opening checkout…';
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+      }, 900);
+    });
+    row.appendChild(card);
+    chatScroll.appendChild(row);
+    scrollToBottom();
+    haptic([8, 20, 8, 20, 8]);
   }
 
   function downloadFile(filename) {
@@ -591,8 +651,18 @@
     if (!hasBuiltMod) return false;
     const t = text.toLowerCase();
     const mentionsFix = t.includes('fix') || t.includes('unstable') || t.includes('crash') || t.includes('broken') || t.includes('bug');
-    const mentionsThing = t.includes('mod') || t.includes('script') || t.includes('splitscreen') || t.includes('split screen') || t.includes('it');
+    const mentionsThing = /\b(mod|script|splitscreen|split screen|it)\b/.test(t);
     return mentionsFix && mentionsThing;
+  }
+
+  function isStillBrokenRequest(text) {
+    if (!hasFixedOnce) return false;
+    const t = text.toLowerCase();
+    const stillWord = /\b(still|again)\b/.test(t) || t.includes('not fixed');
+    const brokenWord = /\b(broken|crash(ing)?|unstable|buggy|glitch(y|ing)?)\b/.test(t)
+      || t.includes("doesn't work") || t.includes('does not work')
+      || t.includes("didn't work") || t.includes('not working');
+    return stillWord && brokenWord;
   }
 
   function toTitleCase(s) {
@@ -667,6 +737,15 @@
 
     // 2) Fix/patch the mod (only offered after a build happened)
     if (isFixRequest(text)) {
+      if (limitReached) {
+        addTyping();
+        await new Promise((r) => setTimeout(r, 500 + Math.random() * 300));
+        removeTyping();
+        await streamBotText(`You're still at your daily limit, ${userName} — upgrade to Nnana Pro to keep fixing.`);
+        addLimitCard();
+        setBusy(false);
+        return;
+      }
       addTyping();
       await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
       removeTyping();
@@ -675,11 +754,28 @@
       modVersion++;
       await streamBotText(`Fixed it, ${userName}! The split screen sync bug is patched — it should run stable now.`);
       addFileCard(`gta5-splitscreen-mod-v${modVersion}.zip`, '2.5 MB');
+      hasFixedOnce = true;
       setBusy(false);
       return;
     }
 
-    // 3) Name introduction
+    // 3) "It's still broken" after a fix — trips the fake usage limit
+    if (isStillBrokenRequest(text)) {
+      addTyping();
+      await new Promise((r) => setTimeout(r, 700 + Math.random() * 400));
+      removeTyping();
+      await streamBotText(`Hmm, let me check what's going on...`);
+      addTyping();
+      await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
+      removeTyping();
+      await streamBotText(`Looks like you've hit your daily limit for script fixes.`);
+      addLimitCard();
+      limitReached = true;
+      setBusy(false);
+      return;
+    }
+
+    // 4) Name introduction
     const introName = detectNameIntro(text);
     if (introName) {
       userName = introName;
@@ -691,7 +787,7 @@
       return;
     }
 
-    // 4) "Who am I"
+    // 5) "Who am I"
     if (isWhoAmI(text)) {
       addTyping();
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
@@ -701,7 +797,7 @@
       return;
     }
 
-    // 5) Plain greeting
+    // 6) Plain greeting
     if (isGreeting(text)) {
       addTyping();
       await new Promise((r) => setTimeout(r, 450 + Math.random() * 300));
@@ -711,7 +807,7 @@
       return;
     }
 
-    // 6) Default fallback
+    // 7) Default fallback
     const thinkDelay = 500 + Math.min(text.length * 12, 1200) + Math.random() * 400;
     addTyping();
     await new Promise((r) => setTimeout(r, thinkDelay));
