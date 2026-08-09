@@ -16,7 +16,7 @@
   .phone {
     max-width: 460px;
     margin: 0 auto;
-    height: 100vh;
+    height: 100dvh;
     background: #000;
     display: flex;
     flex-direction: column;
@@ -247,13 +247,22 @@
     position: relative;
     width: 42px; height: 42px; border-radius: 50%; background: #fff; border: none; color: #000;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
-    transition: transform 0.12s ease, background 0.2s ease, border-radius 0.2s ease;
+    transition: transform 0.12s ease, background 0.2s ease;
     overflow: hidden;
   }
   .send-btn:active { transform: scale(0.88); }
-  .send-btn svg { width: 19px; height: 19px; transition: opacity 0.15s ease; }
+  .send-btn .icon-voice, .send-btn .icon-arrow {
+    position: absolute;
+    width: 19px; height: 19px;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .send-btn .icon-arrow { opacity: 0; transform: scale(0.6); }
+  .send-btn .icon-voice { opacity: 1; transform: scale(1); }
+  .send-btn.has-text .icon-voice { opacity: 0; transform: scale(0.6); }
+  .send-btn.has-text .icon-arrow { opacity: 1; transform: scale(1); }
   .send-btn.busy { background: #232325; color: #6bd486; cursor: default; }
   .send-btn.busy:active { transform: none; }
+  .send-btn.busy .icon-voice, .send-btn.busy .icon-arrow { opacity: 0; }
   .send-btn .ring {
     position: absolute; inset: -2px; border-radius: 50%;
     border: 2px solid transparent;
@@ -312,7 +321,8 @@
             </button>
             <button class="send-btn" id="sendBtn">
               <span class="ring"></span>
-              <svg class="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+              <svg class="icon-voice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+              <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
             </button>
           </div>
         </div>
@@ -328,9 +338,11 @@
   const inputCard = document.getElementById('inputCard');
 
   const MOD_ZIP_B64 = "UEsDBBQAAAAIAIJcCV1vm7ngwQAAABgBAAAKAAAAUkVBRE1FLnR4dCWPQW7EMAhF9znF16xaadqeoctsumoPQG0yQXHAshmluX3xzAoQ/78P36t0LFIYB3XcWLmRc8bvCcLPjN3Sdq8fmXcD1YqXy5eSEj7ny+v7NM2O8BNqocSrlcztSUuNH5x6b1xOuGEgtPvA41jJQdNQvmU7tBhl8F/lJqyJUcy2jiIbQ7RL5ohYKKY0jKLObYnA5wHZuEPNkUydREF6IuILbrRzfJBlkUQuplf01KT6FdbGYlqiDvlDGX0gupUA/wNQSwECFAMUAAAACACCXAldb5u54MEAAAAYAQAACgAAAAAAAAAAAAAApIEAAAAAUkVBRE1FLnR4dFBLBQYAAAAAAQABADgAAADpAAAAAAA=";
-  const MOD_FILENAME = "gta5-splitscreen-mod.zip";
 
   let busy = false;
+  let userName = 'Vans';
+  let hasBuiltMod = false;
+  let modVersion = 1;
 
   function haptic(pattern) {
     if (navigator.vibrate) {
@@ -457,23 +469,16 @@
     busy = state;
     input.disabled = state;
     sendBtn.classList.toggle('busy', state);
-    sendBtn.querySelector('.icon-send').style.opacity = state ? '0' : '1';
   }
 
-  // Builds the multi-step "generating" card and animates it over ~29s.
-  function runBuildFlow() {
+  function updateSendIcon() {
+    sendBtn.classList.toggle('has-text', input.value.trim().length > 0);
+  }
+
+  // Generic multi-step "working" card used for both building and fixing.
+  function runStepFlow(cardLabel, doneLabel, steps, durations) {
     return new Promise((resolve) => {
       clearEmptyState();
-      const steps = [
-        'Analyzing GTA V (PS4) file structure',
-        'Setting up script mod framework',
-        'Writing splitscreen camera logic',
-        'Mapping dual-controller input',
-        'Building player 2 UI overlay',
-        'Compiling and packaging files',
-        'Running final checks'
-      ];
-      const durations = [3200, 4600, 5600, 3800, 4400, 3600, 2800]; // ~28s total
       const total = durations.reduce((a, b) => a + b, 0);
 
       const row = document.createElement('div');
@@ -485,7 +490,7 @@
       title.className = 'build-title';
       title.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-        <span>Building gta5-splitscreen-mod.zip</span>
+        <span>${cardLabel}</span>
       `;
 
       const stepList = document.createElement('div');
@@ -517,7 +522,7 @@
       function runStep() {
         if (idx >= steps.length) {
           title.classList.add('done');
-          title.querySelector('span').textContent = 'Build complete';
+          title.querySelector('span').textContent = doneLabel;
           title.querySelector('svg').outerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
           haptic([10, 30, 10]);
           setTimeout(() => resolve(row), 400);
@@ -550,6 +555,31 @@
     });
   }
 
+  function runBuildFlow() {
+    const steps = [
+      'Analyzing GTA V (PS4) file structure',
+      'Setting up script mod framework',
+      'Writing splitscreen camera logic',
+      'Mapping dual-controller input',
+      'Building player 2 UI overlay',
+      'Compiling and packaging files',
+      'Running final checks'
+    ];
+    const durations = [3200, 4600, 5600, 3800, 4400, 3600, 2800]; // ~28s
+    return runStepFlow('Building gta5-splitscreen-mod.zip', 'Build complete', steps, durations);
+  }
+
+  function runFixFlow() {
+    const steps = [
+      'Reading crash + error logs',
+      'Isolating the splitscreen desync bug',
+      'Patching camera + input sync',
+      'Re-testing stability'
+    ];
+    const durations = [2600, 3400, 3800, 2600]; // ~12.4s
+    return runStepFlow('Patching gta5-splitscreen-mod.zip', 'Patch complete', steps, durations);
+  }
+
   function isModRequest(text) {
     const t = text.toLowerCase();
     const mentionsSplit = t.includes('splitscreen') || t.includes('split screen') || t.includes('split-screen');
@@ -557,18 +587,57 @@
     return mentionsSplit && mentionsGta;
   }
 
-  function getGreetingReply(text) {
-    const normalized = text.trim().toLowerCase().replace(/[!.?]/g, '');
-    if (normalized.includes('nnana')) return "Hi Vans!, Ready to make something?";
+  function isFixRequest(text) {
+    if (!hasBuiltMod) return false;
+    const t = text.toLowerCase();
+    const mentionsFix = t.includes('fix') || t.includes('unstable') || t.includes('crash') || t.includes('broken') || t.includes('bug');
+    const mentionsThing = t.includes('mod') || t.includes('script') || t.includes('splitscreen') || t.includes('split screen') || t.includes('it');
+    return mentionsFix && mentionsThing;
+  }
+
+  function toTitleCase(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  }
+
+  // Picks up "I'm X", "my name is X", "call me X" style intros.
+  function detectNameIntro(text) {
+    const m = text.match(/\b(?:i am|i'm|im|my name is|name's|call me|this is)\s+([a-zA-Z]{2,20})\b/i);
+    if (m) return toTitleCase(m[1]);
     return null;
   }
 
-  const fallbacks = [
-    "Got it, Vans — tell me more about what you're thinking.",
-    "Sounds good! What should we build first?",
-    "I'm listening — go ahead.",
-    "Nice, let's dig into that."
+  function isGreeting(text) {
+    const t = text.trim().toLowerCase().replace(/[!.?,]/g, '');
+    const words = t.split(/\s+/).filter(Boolean);
+    const greetWords = ['hello', 'hi', 'hey', 'yo', 'sup', 'hiya', 'howdy', 'heyy', 'hii'];
+    return words.length <= 4 && words.some((w) => greetWords.includes(w));
+  }
+
+  function isWhoAmI(text) {
+    const t = text.trim().toLowerCase().replace(/[!.?]/g, '');
+    return t.includes('who am i') || t.includes('do you know who i am') || t.includes('guess who i am');
+  }
+
+  const greetReplies = [
+    `Hey ${'{name}'}! Ready to make something?`,
+    `Hi ${'{name}'}! What are we building today?`,
+    `Yo ${'{name}'} — what's on your mind?`
   ];
+
+  const fallbacks = [
+    `Got it, ${'{name}'} — tell me more about what you're thinking.`,
+    `Sounds good, ${'{name}'}! What should we build first?`,
+    `I'm listening — go ahead.`,
+    `Nice, let's dig into that.`
+  ];
+
+  function fillName(template) {
+    return template.replace('{name}', userName);
+  }
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
   async function handleSend() {
     if (busy) return;
@@ -578,34 +647,82 @@
     addUserBubble(text);
     input.value = '';
     input.style.height = 'auto';
+    updateSendIcon();
     haptic(10);
     setBusy(true);
 
+    // 1) Build the mod
     if (isModRequest(text)) {
-      const thinkDelay = 900 + Math.random() * 500;
       addTyping();
-      await new Promise((r) => setTimeout(r, thinkDelay));
+      await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
       removeTyping();
-      await streamBotText("On it — building a 2 player splitscreen setup for GTA V on PS4. This'll take a moment.");
+      await streamBotText(`On it, ${userName} — building a 2 player splitscreen setup for GTA V on PS4. This'll take a moment.`);
       await runBuildFlow();
-      await streamBotText("Here's a working 2 player split screen mod for GTA 5 PS4!");
-      addFileCard(MOD_FILENAME, "2.4 MB");
+      await streamBotText('Here\'s a working 2 player split screen mod for GTA 5 PS4!');
+      addFileCard('gta5-splitscreen-mod.zip', '2.4 MB');
+      hasBuiltMod = true;
       setBusy(false);
       return;
     }
 
-    const greeting = getGreetingReply(text);
-    const reply = greeting || fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    // 2) Fix/patch the mod (only offered after a build happened)
+    if (isFixRequest(text)) {
+      addTyping();
+      await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+      removeTyping();
+      await streamBotText(`Got it — let me take a look at what's making it unstable.`);
+      await runFixFlow();
+      modVersion++;
+      await streamBotText(`Fixed it, ${userName}! The split screen sync bug is patched — it should run stable now.`);
+      addFileCard(`gta5-splitscreen-mod-v${modVersion}.zip`, '2.5 MB');
+      setBusy(false);
+      return;
+    }
+
+    // 3) Name introduction
+    const introName = detectNameIntro(text);
+    if (introName) {
+      userName = introName;
+      addTyping();
+      await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
+      removeTyping();
+      await streamBotText(`Hi ${userName}, how are you?`);
+      setBusy(false);
+      return;
+    }
+
+    // 4) "Who am I"
+    if (isWhoAmI(text)) {
+      addTyping();
+      await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
+      removeTyping();
+      await streamBotText(userName === 'Vans' ? "I don't know yet — what's your name?" : `You're ${userName}, of course!`);
+      setBusy(false);
+      return;
+    }
+
+    // 5) Plain greeting
+    if (isGreeting(text)) {
+      addTyping();
+      await new Promise((r) => setTimeout(r, 450 + Math.random() * 300));
+      removeTyping();
+      await streamBotText(fillName(pick(greetReplies)));
+      setBusy(false);
+      return;
+    }
+
+    // 6) Default fallback
     const thinkDelay = 500 + Math.min(text.length * 12, 1200) + Math.random() * 400;
     addTyping();
     await new Promise((r) => setTimeout(r, thinkDelay));
     removeTyping();
-    await streamBotText(reply);
+    await streamBotText(fillName(pick(fallbacks)));
     setBusy(false);
   }
 
   sendBtn.addEventListener('click', (e) => {
     if (busy) return;
+    if (!input.value.trim()) return;
     const rect = sendBtn.getBoundingClientRect();
     const ripple = document.createElement('span');
     ripple.className = 'ripple';
@@ -628,6 +745,7 @@
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    updateSendIcon();
   });
 
   input.addEventListener('focus', () => { inputCard.style.borderColor = '#3a3a3c'; });
