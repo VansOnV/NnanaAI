@@ -32,13 +32,10 @@
     flex-shrink: 0;
   }
   .icon-btn {
-    width: 46px;
-    height: 46px;
+    width: 46px; height: 46px;
     border-radius: 50%;
     background: #1a1a1c;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     color: #cfcfcf;
     cursor: pointer;
     border: none;
@@ -52,6 +49,7 @@
     padding: 6px 20px 10px;
     display: flex;
     flex-direction: column;
+    scroll-behavior: smooth;
   }
 
   .empty-state {
@@ -65,60 +63,61 @@
     padding-bottom: 40px;
   }
   .gear-badge {
-    width: 84px;
-    height: 84px;
+    width: 84px; height: 84px;
     border-radius: 22px;
     background: radial-gradient(circle at 32% 28%, #6bd486, #2f9450 70%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     box-shadow: 0 6px 20px rgba(60, 180, 100, 0.25);
   }
   .gear-badge svg { width: 46px; height: 46px; color: #0d3319; }
-  .empty-state h1 {
-    font-size: 36px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-  }
+  .empty-state h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; }
 
   .upgrade-card {
-    width: 100%;
-    max-width: 380px;
+    width: 100%; max-width: 380px;
     background: #131315;
     border: 1px solid #232325;
     border-radius: 20px;
     padding: 18px 20px 20px;
     text-align: left;
   }
-  .upgrade-card p {
-    color: #9a9a9d;
-    font-size: 14px;
-    margin-bottom: 14px;
-  }
+  .upgrade-card p { color: #9a9a9d; font-size: 14px; margin-bottom: 14px; }
   .upgrade-btn {
-    width: 100%;
-    background: #232325;
-    color: #fff;
-    border: none;
-    border-radius: 24px;
-    padding: 13px 0;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
+    width: 100%; background: #232325; color: #fff; border: none;
+    border-radius: 24px; padding: 13px 0; font-size: 16px; font-weight: 600; cursor: pointer;
   }
 
-  .bubble-row { display: flex; margin: 6px 0; }
+  .bubble-row {
+    display: flex;
+    margin: 6px 0;
+    animation: bubbleIn 0.32s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
   .bubble-row.user { justify-content: flex-end; }
   .bubble-row.bot { justify-content: flex-start; }
   .bubble {
-    max-width: 78%;
+    max-width: 80%;
     padding: 12px 16px;
     border-radius: 20px;
     font-size: 16px;
-    line-height: 1.4;
+    line-height: 1.45;
+    white-space: pre-wrap;
   }
   .bubble.user { background: #2f7a45; color: #fff; border-bottom-right-radius: 6px; }
   .bubble.bot { background: #1a1a1c; color: #f0f0f0; border-bottom-left-radius: 6px; }
+
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 16px;
+    background: #d8d8d8;
+    margin-left: 2px;
+    vertical-align: -3px;
+    animation: blinkCursor 0.9s steps(1) infinite;
+    border-radius: 1px;
+  }
+  @keyframes blinkCursor { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
   .typing { display: flex; gap: 4px; padding: 14px 16px; }
   .typing span {
@@ -128,10 +127,85 @@
   }
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.3; }
-    40% { opacity: 1; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+
+  /* Build/progress card */
+  .build-card {
+    background: #131315;
+    border: 1px solid #232325;
+    border-radius: 18px;
+    padding: 16px 18px 18px;
+    max-width: 84%;
+    margin: 6px 0;
   }
+  .build-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14.5px; font-weight: 600; color: #e6e6e6;
+    margin-bottom: 12px;
+  }
+  .build-title svg { width: 16px; height: 16px; color: #6bd486; flex-shrink: 0; animation: spin 1.4s linear infinite; }
+  .build-title.done svg { animation: none; color: #4fbf6b; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .step-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; color: #6b6b6e;
+    transition: color 0.25s ease;
+  }
+  .step .dot {
+    width: 15px; height: 15px; border-radius: 50%;
+    border: 1.5px solid #3a3a3c;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s ease;
+  }
+  .step.active { color: #e6e6e6; }
+  .step.active .dot { border-color: #6bd486; }
+  .step.active .dot::after {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #6bd486;
+    animation: pulseDot 1s infinite ease-in-out;
+  }
+  @keyframes pulseDot { 0%, 100% { opacity: 0.4; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
+  .step.done { color: #9a9a9d; }
+  .step.done .dot { background: #2f9450; border-color: #2f9450; }
+  .step.done .dot svg { width: 9px; height: 9px; color: #fff; }
+
+  .progress-track {
+    width: 100%; height: 5px; background: #232325; border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%; background: linear-gradient(90deg, #3f9e5c, #6bd486);
+    border-radius: 4px; transition: width 0.4s linear;
+  }
+
+  /* File / artifact card */
+  .file-card {
+    display: flex; align-items: center; gap: 12px;
+    background: #131315;
+    border: 1px solid #232325;
+    border-radius: 16px;
+    padding: 13px 14px;
+    max-width: 84%;
+    margin: 6px 0;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .file-card:active { transform: scale(0.98); background: #1a1a1c; }
+  .file-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(160deg, #3f9e5c, #235c34);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .file-icon svg { width: 20px; height: 20px; color: #fff; }
+  .file-meta { flex: 1; min-width: 0; }
+  .file-name { font-size: 14.5px; font-weight: 600; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-sub { font-size: 12.5px; color: #8a8a8d; margin-top: 2px; }
+  .file-dl { width: 30px; height: 30px; border-radius: 50%; background: #232325; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .file-dl svg { width: 14px; height: 14px; color: #d8d8d8; }
 
   /* Input area */
   .input-wrap { padding: 8px 16px 24px; flex-shrink: 0; }
@@ -140,73 +214,59 @@
     border: 1px solid #202022;
     border-radius: 28px;
     padding: 14px 18px 10px;
+    transition: border-color 0.2s ease;
   }
   .input-card textarea {
-    width: 100%;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font-size: 17px;
-    resize: none;
-    font-family: inherit;
-    max-height: 100px;
+    width: 100%; background: transparent; border: none; outline: none;
+    color: #fff; font-size: 17px; resize: none; font-family: inherit; max-height: 100px;
   }
   .input-card textarea::placeholder { color: #7d7d80; }
+  .input-card textarea:disabled { opacity: 0.5; }
 
-  .input-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-  }
+  .input-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
   .left-controls { display: flex; align-items: center; gap: 10px; }
   .plus-btn {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: #232325;
-    border: none;
-    color: #ddd;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
+    width: 34px; height: 34px; border-radius: 50%; background: #232325; border: none; color: #ddd;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .plus-btn svg { width: 16px; height: 16px; }
   .model-pill {
-    background: #1e1e20;
-    color: #ccc;
-    border-radius: 16px;
-    padding: 8px 14px;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
+    background: #1e1e20; color: #ccc; border-radius: 16px; padding: 8px 14px; font-size: 14px;
+    display: flex; align-items: center; gap: 4px; cursor: pointer;
   }
   .model-pill b { color: #fff; font-weight: 600; }
 
   .right-controls { display: flex; align-items: center; gap: 6px; }
   .mic-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: #ccc;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; color: #ccc;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .mic-btn svg { width: 19px; height: 19px; }
+
   .send-btn {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: #fff;
-    border: none;
-    color: #000;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: transform 0.1s ease, opacity 0.2s ease;
+    position: relative;
+    width: 42px; height: 42px; border-radius: 50%; background: #fff; border: none; color: #000;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: transform 0.12s ease, background 0.2s ease, border-radius 0.2s ease;
+    overflow: hidden;
   }
-  .send-btn svg { width: 19px; height: 19px; }
-  .send-btn:active { transform: scale(0.9); }
+  .send-btn:active { transform: scale(0.88); }
+  .send-btn svg { width: 19px; height: 19px; transition: opacity 0.15s ease; }
+  .send-btn.busy { background: #232325; color: #6bd486; cursor: default; }
+  .send-btn.busy:active { transform: none; }
+  .send-btn .ring {
+    position: absolute; inset: -2px; border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #6bd486;
+    display: none;
+    animation: spin 0.9s linear infinite;
+  }
+  .send-btn.busy .ring { display: block; }
+  .ripple {
+    position: absolute; border-radius: 50%; background: rgba(0,0,0,0.15);
+    transform: scale(0); animation: rippleAnim 0.5s ease-out forwards; pointer-events: none;
+  }
+  @keyframes rippleAnim { to { transform: scale(2.6); opacity: 0; } }
 
   .chat-scroll::-webkit-scrollbar { width: 0; }
 </style>
@@ -237,7 +297,7 @@
     </div>
 
     <div class="input-wrap">
-      <div class="input-card">
+      <div class="input-card" id="inputCard">
         <textarea id="msgInput" rows="1" placeholder="Chat with Nnana AI"></textarea>
         <div class="input-controls">
           <div class="left-controls">
@@ -251,7 +311,8 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
             </button>
             <button class="send-btn" id="sendBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+              <span class="ring"></span>
+              <svg class="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
             </button>
           </div>
         </div>
@@ -264,26 +325,40 @@
   const emptyState = document.getElementById('emptyState');
   const input = document.getElementById('msgInput');
   const sendBtn = document.getElementById('sendBtn');
+  const inputCard = document.getElementById('inputCard');
+
+  const MOD_ZIP_B64 = "UEsDBBQAAAAIAIJcCV1vm7ngwQAAABgBAAAKAAAAUkVBRE1FLnR4dCWPQW7EMAhF9znF16xaadqeoctsumoPQG0yQXHAshmluX3xzAoQ/78P36t0LFIYB3XcWLmRc8bvCcLPjN3Sdq8fmXcD1YqXy5eSEj7ny+v7NM2O8BNqocSrlcztSUuNH5x6b1xOuGEgtPvA41jJQdNQvmU7tBhl8F/lJqyJUcy2jiIbQ7RL5ohYKKY0jKLObYnA5wHZuEPNkUydREF6IuILbrRzfJBlkUQuplf01KT6FdbGYlqiDvlDGX0gupUA/wNQSwECFAMUAAAACACCXAldb5u54MEAAAAYAQAACgAAAAAAAAAAAAAApIEAAAAAUkVBRE1FLnR4dFBLBQYAAAAAAQABADgAAADpAAAAAAA=";
+  const MOD_FILENAME = "gta5-splitscreen-mod.zip";
+
+  let busy = false;
+
+  function haptic(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
 
   function scrollToBottom() {
     chatScroll.scrollTop = chatScroll.scrollHeight;
   }
 
-  function addBubble(text, who) {
-    if (emptyState && emptyState.parentNode) {
-      emptyState.remove();
-    }
+  function clearEmptyState() {
+    if (emptyState && emptyState.parentNode) emptyState.remove();
+  }
+
+  function addUserBubble(text) {
+    clearEmptyState();
     const row = document.createElement('div');
-    row.className = 'bubble-row ' + who;
+    row.className = 'bubble-row user';
     const bubble = document.createElement('div');
-    bubble.className = 'bubble ' + who;
+    bubble.className = 'bubble user';
     bubble.textContent = text;
     row.appendChild(bubble);
     chatScroll.appendChild(row);
     scrollToBottom();
   }
 
-  function showTyping() {
+  function addTyping() {
     const row = document.createElement('div');
     row.className = 'bubble-row bot';
     row.id = 'typingRow';
@@ -293,6 +368,7 @@
     row.appendChild(bubble);
     chatScroll.appendChild(row);
     scrollToBottom();
+    return row;
   }
 
   function removeTyping() {
@@ -300,40 +376,252 @@
     if (row) row.remove();
   }
 
-  function getReply(text) {
-    const normalized = text.trim().toLowerCase().replace(/[!.?]/g, '');
-    if (normalized.includes('nnana')) {
-      return "Hi Vans!, Ready to make something?";
-    }
-    const fallbacks = [
-      "Got it, Vans — tell me more about what you're thinking.",
-      "Sounds good! What should we build first?",
-      "I'm listening — go ahead.",
-      "Nice, let's dig into that."
-    ];
-    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  // Streams text word-by-word into a bot bubble, like real token streaming.
+  function streamBotText(text) {
+    return new Promise((resolve) => {
+      clearEmptyState();
+      const row = document.createElement('div');
+      row.className = 'bubble-row bot';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble bot';
+      const textSpan = document.createElement('span');
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      bubble.appendChild(textSpan);
+      bubble.appendChild(cursor);
+      row.appendChild(bubble);
+      chatScroll.appendChild(row);
+      scrollToBottom();
+
+      const words = text.split(' ');
+      let i = 0;
+      haptic(12);
+
+      function next() {
+        if (i >= words.length) {
+          cursor.remove();
+          resolve(row);
+          return;
+        }
+        textSpan.textContent += (i === 0 ? '' : ' ') + words[i];
+        i++;
+        scrollToBottom();
+        const delay = 35 + Math.random() * 55;
+        setTimeout(next, delay);
+      }
+      next();
+    });
   }
 
-  function sendMessage() {
+  function addFileCard(filename, sizeLabel) {
+    const row = document.createElement('div');
+    row.className = 'bubble-row bot';
+    const card = document.createElement('div');
+    card.className = 'file-card';
+    card.innerHTML = `
+      <div class="file-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      </div>
+      <div class="file-meta">
+        <div class="file-name">${filename}</div>
+        <div class="file-sub">${sizeLabel} · ZIP Archive</div>
+      </div>
+      <div class="file-dl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      </div>
+    `;
+    card.addEventListener('click', () => downloadFile(filename));
+    row.appendChild(card);
+    chatScroll.appendChild(row);
+    scrollToBottom();
+    haptic([10, 40, 10]);
+  }
+
+  function downloadFile(filename) {
+    const byteChars = atob(MOD_ZIP_B64);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function setBusy(state) {
+    busy = state;
+    input.disabled = state;
+    sendBtn.classList.toggle('busy', state);
+    sendBtn.querySelector('.icon-send').style.opacity = state ? '0' : '1';
+  }
+
+  // Builds the multi-step "generating" card and animates it over ~29s.
+  function runBuildFlow() {
+    return new Promise((resolve) => {
+      clearEmptyState();
+      const steps = [
+        'Analyzing GTA V (PS4) file structure',
+        'Setting up script mod framework',
+        'Writing splitscreen camera logic',
+        'Mapping dual-controller input',
+        'Building player 2 UI overlay',
+        'Compiling and packaging files',
+        'Running final checks'
+      ];
+      const durations = [3200, 4600, 5600, 3800, 4400, 3600, 2800]; // ~28s total
+      const total = durations.reduce((a, b) => a + b, 0);
+
+      const row = document.createElement('div');
+      row.className = 'bubble-row bot';
+      const card = document.createElement('div');
+      card.className = 'build-card';
+
+      const title = document.createElement('div');
+      title.className = 'build-title';
+      title.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <span>Building gta5-splitscreen-mod.zip</span>
+      `;
+
+      const stepList = document.createElement('div');
+      stepList.className = 'step-list';
+      const stepEls = steps.map((label) => {
+        const el = document.createElement('div');
+        el.className = 'step';
+        el.innerHTML = `<div class="dot"></div><span>${label}</span>`;
+        stepList.appendChild(el);
+        return el;
+      });
+
+      const track = document.createElement('div');
+      track.className = 'progress-track';
+      const fill = document.createElement('div');
+      fill.className = 'progress-fill';
+      track.appendChild(fill);
+
+      card.appendChild(title);
+      card.appendChild(stepList);
+      card.appendChild(track);
+      row.appendChild(card);
+      chatScroll.appendChild(row);
+      scrollToBottom();
+
+      let elapsed = 0;
+      let idx = 0;
+
+      function runStep() {
+        if (idx >= steps.length) {
+          title.classList.add('done');
+          title.querySelector('span').textContent = 'Build complete';
+          title.querySelector('svg').outerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+          haptic([10, 30, 10]);
+          setTimeout(() => resolve(row), 400);
+          return;
+        }
+        stepEls[idx].classList.add('active');
+        haptic(8);
+        const dur = durations[idx];
+        const startElapsed = elapsed;
+        const stepStart = performance.now();
+
+        function tick() {
+          const t = Math.min(1, (performance.now() - stepStart) / dur);
+          const currentTotal = startElapsed + t * dur;
+          fill.style.width = Math.min(100, (currentTotal / total) * 100) + '%';
+          if (t < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            stepEls[idx].classList.remove('active');
+            stepEls[idx].classList.add('done');
+            stepEls[idx].querySelector('.dot').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+            elapsed += dur;
+            idx++;
+            runStep();
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      runStep();
+    });
+  }
+
+  function isModRequest(text) {
+    const t = text.toLowerCase();
+    const mentionsSplit = t.includes('splitscreen') || t.includes('split screen') || t.includes('split-screen');
+    const mentionsGta = t.includes('gta');
+    return mentionsSplit && mentionsGta;
+  }
+
+  function getGreetingReply(text) {
+    const normalized = text.trim().toLowerCase().replace(/[!.?]/g, '');
+    if (normalized.includes('nnana')) return "Hi Vans!, Ready to make something?";
+    return null;
+  }
+
+  const fallbacks = [
+    "Got it, Vans — tell me more about what you're thinking.",
+    "Sounds good! What should we build first?",
+    "I'm listening — go ahead.",
+    "Nice, let's dig into that."
+  ];
+
+  async function handleSend() {
+    if (busy) return;
     const text = input.value.trim();
     if (!text) return;
-    addBubble(text, 'user');
+
+    addUserBubble(text);
     input.value = '';
     input.style.height = 'auto';
-    showTyping();
-    const delay = 700 + Math.random() * 500;
-    setTimeout(() => {
+    haptic(10);
+    setBusy(true);
+
+    if (isModRequest(text)) {
+      const thinkDelay = 900 + Math.random() * 500;
+      addTyping();
+      await new Promise((r) => setTimeout(r, thinkDelay));
       removeTyping();
-      addBubble(getReply(text), 'bot');
-    }, delay);
+      await streamBotText("On it — building a 2 player splitscreen setup for GTA V on PS4. This'll take a moment.");
+      await runBuildFlow();
+      await streamBotText("Here's a working 2 player split screen mod for GTA 5 PS4!");
+      addFileCard(MOD_FILENAME, "2.4 MB");
+      setBusy(false);
+      return;
+    }
+
+    const greeting = getGreetingReply(text);
+    const reply = greeting || fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    const thinkDelay = 500 + Math.min(text.length * 12, 1200) + Math.random() * 400;
+    addTyping();
+    await new Promise((r) => setTimeout(r, thinkDelay));
+    removeTyping();
+    await streamBotText(reply);
+    setBusy(false);
   }
 
-  sendBtn.addEventListener('click', sendMessage);
+  sendBtn.addEventListener('click', (e) => {
+    if (busy) return;
+    const rect = sendBtn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    const size = rect.width;
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = ((e.clientX || rect.left + rect.width / 2) - rect.left - size / 2) + 'px';
+    ripple.style.top = ((e.clientY || rect.top + rect.height / 2) - rect.top - size / 2) + 'px';
+    sendBtn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+    handleSend();
+  });
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSend();
     }
   });
 
@@ -341,6 +629,9 @@
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 100) + 'px';
   });
+
+  input.addEventListener('focus', () => { inputCard.style.borderColor = '#3a3a3c'; });
+  input.addEventListener('blur', () => { inputCard.style.borderColor = '#202022'; });
 </script>
 </body>
 </html>
