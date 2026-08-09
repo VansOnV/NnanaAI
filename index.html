@@ -3,473 +3,344 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vans Patch — PS4 UI Preview</title>
+<title>Nnana AI</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: #111;
-    font-family: 'Courier New', monospace;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Helvetica, Arial, sans-serif;
+    color: #fff;
+    overflow: hidden;
+  }
+  .phone {
+    max-width: 460px;
+    margin: 0 auto;
+    height: 100vh;
+    background: #000;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 30px 20px;
-    gap: 40px;
-  }
-
-  h2 {
-    color: #555;
-    font-size: 13px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: -30px;
-    align-self: flex-start;
-    margin-left: calc(50% - 480px);
-  }
-
-  /* PS4 screen: 1920x1080 scaled to 960x540 */
-  .screen {
-    width: 960px;
-    height: 540px;
-    background: #1A1A2E;
     position: relative;
-    overflow: hidden;
-    border: 2px solid #333;
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 22px 10px;
     flex-shrink: 0;
   }
-
-  /* ── Header ── */
-  .header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 25px;
-    background: #16213E;
-    border-bottom: 2px solid #00D4FF;
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #1a1a1c;
     display: flex;
     align-items: center;
-    padding: 0 40px;
-    gap: 12px;
-  }
-  .header-title {
-    color: #00D4FF;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 3px;
-  }
-  .header-sub {
-    color: #888899;
-    font-size: 10px;
-    letter-spacing: 1px;
-  }
-  .header-ver {
-    margin-left: auto;
-    color: #888899;
-    font-size: 10px;
-  }
-
-  /* ── Footer ── */
-  .footer {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 25px;
-    background: #16213E;
-    border-top: 2px solid #7B2FBE;
-    display: flex;
-    align-items: center;
-    padding: 0 40px;
-  }
-  .footer-hint { color: #888899; font-size: 10px; }
-  .footer-credit {
-    margin-left: auto;
-    color: #888899;
-    font-size: 10px;
-  }
-
-  /* ── Content area ── */
-  .content {
-    position: absolute;
-    top: 27px; bottom: 27px;
-    left: 40px; right: 40px;
-    padding-top: 16px;
-  }
-
-  /* ── Validation screen ── */
-  .id-box {
-    background: #16213E;
-    border: 1px solid #7B2FBE;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  .id-label { color: #888899; font-size: 10px; }
-  .id-value { color: #EEEEEE; font-size: 11px; letter-spacing: 2px; }
-
-  .section-label {
-    color: #888899;
-    font-size: 10px;
-    margin-bottom: 8px;
-  }
-
-  .key-box {
-    background: #16213E;
-    border: 2px solid #00D4FF;
-    padding: 12px 14px;
-    margin-bottom: 16px;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-  }
-  .key-value {
-    color: #00D4FF;
-    font-size: 16px;
-    letter-spacing: 4px;
-  }
-  .cursor {
-    display: inline-block;
-    width: 2px;
-    height: 18px;
-    background: #00D4FF;
-    margin-left: 4px;
-    animation: blink 1s step-end infinite;
-    vertical-align: middle;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-
-  .hint-text {
-    color: #888899;
-    font-size: 9px;
-    line-height: 1.8;
-  }
-
-  /* ── Menu screen ── */
-  .menu-item {
-    padding: 14px 14px;
-    margin-bottom: 6px;
+    justify-content: center;
+    color: #cfcfcf;
     cursor: pointer;
-    position: relative;
-    transition: all 0.15s;
+    border: none;
   }
-  .menu-item.focused {
-    background: #00D4FF;
-  }
-  .menu-item.focused::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 4px;
-    background: #7B2FBE;
-  }
-  .menu-item:not(.focused) {
-    background: #16213E;
-    border: 1px solid #7B2FBE;
-  }
-  .item-label {
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .menu-item.focused .item-label { color: #1A1A2E; }
-  .menu-item:not(.focused) .item-label { color: #EEEEEE; }
-  .item-sub {
-    font-size: 9px;
-  }
-  .menu-item.focused .item-sub { color: #1A1A2E; }
-  .menu-item:not(.focused) .item-sub { color: #888899; }
+  .icon-btn svg { width: 20px; height: 20px; }
 
-  /* ── Progress screen ── */
-  .progress-label {
-    color: #EEEEEE;
-    font-size: 13px;
-    margin-bottom: 20px;
-    letter-spacing: 1px;
-  }
-  .progress-track {
-    background: #2A2A4A;
-    height: 16px;
-    margin-bottom: 10px;
-    position: relative;
-    border: 1px solid #888899;
-  }
-  .progress-fill {
-    background: #00D4FF;
-    height: 100%;
-    transition: width 0.3s;
-  }
-  .progress-counter {
-    color: #888899;
-    font-size: 10px;
-    margin-bottom: 8px;
-  }
-  .progress-file {
-    color: #EEEEEE;
-    font-size: 9px;
-    word-break: break-all;
-  }
-  .spinner {
-    position: absolute;
-    top: 16px; right: 0;
-    color: #00D4FF;
-    font-size: 14px;
-    animation: spin-dots 1s steps(4) infinite;
-  }
-  @keyframes spin-dots {
-    0%   { content: '.  '; }
-    25%  { opacity: 0.3; }
-    50%  { opacity: 0.6; }
-    100% { opacity: 1; }
-  }
-
-  /* ── Done screen ── */
-  .done-headline {
-    font-size: 22px;
-    font-weight: bold;
-    letter-spacing: 2px;
-    margin-bottom: 20px;
-  }
-  .done-headline.success { color: #00E676; }
-  .done-headline.error   { color: #FF5252; }
-  .done-summary {
-    color: #888899;
-    font-size: 10px;
-    margin-bottom: 12px;
-  }
-
-  /* ── Screen tabs ── */
-  .tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: -2px;
-  }
-  .tab {
-    padding: 6px 16px;
-    background: #222;
-    color: #555;
-    font-size: 11px;
-    cursor: pointer;
-    border: 1px solid #333;
-    letter-spacing: 1px;
-    font-family: 'Courier New', monospace;
-    transition: all 0.15s;
-  }
-  .tab.active {
-    background: #16213E;
-    color: #00D4FF;
-    border-color: #00D4FF;
-    border-bottom-color: #16213E;
-  }
-
-  .screen-wrapper {
+  /* Chat area */
+  .chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 20px 10px;
     display: flex;
     flex-direction: column;
   }
 
-  .btn-hint {
-    display: inline-block;
-    background: #333;
-    color: #EEEEEE;
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    line-height: 16px;
-    font-size: 9px;
-    margin-right: 4px;
+    gap: 20px;
+    padding-bottom: 40px;
   }
-  .btn-x  { background: #4169E1; }
-  .btn-o  { background: #CC0000; }
-  .btn-op { background: #444; }
+  .gear-badge {
+    width: 84px;
+    height: 84px;
+    border-radius: 22px;
+    background: radial-gradient(circle at 32% 28%, #6bd486, #2f9450 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(60, 180, 100, 0.25);
+  }
+  .gear-badge svg { width: 46px; height: 46px; color: #0d3319; }
+  .empty-state h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .upgrade-card {
+    width: 100%;
+    max-width: 380px;
+    background: #131315;
+    border: 1px solid #232325;
+    border-radius: 20px;
+    padding: 18px 20px 20px;
+    text-align: left;
+  }
+  .upgrade-card p {
+    color: #9a9a9d;
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .upgrade-btn {
+    width: 100%;
+    background: #232325;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 13px 0;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .bubble-row { display: flex; margin: 6px 0; }
+  .bubble-row.user { justify-content: flex-end; }
+  .bubble-row.bot { justify-content: flex-start; }
+  .bubble {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 20px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .bubble.user { background: #2f7a45; color: #fff; border-bottom-right-radius: 6px; }
+  .bubble.bot { background: #1a1a1c; color: #f0f0f0; border-bottom-left-radius: 6px; }
+
+  .typing { display: flex; gap: 4px; padding: 14px 16px; }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #888;
+    animation: blink 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+
+  /* Input area */
+  .input-wrap { padding: 8px 16px 24px; flex-shrink: 0; }
+  .input-card {
+    background: #131315;
+    border: 1px solid #202022;
+    border-radius: 28px;
+    padding: 14px 18px 10px;
+  }
+  .input-card textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 17px;
+    resize: none;
+    font-family: inherit;
+    max-height: 100px;
+  }
+  .input-card textarea::placeholder { color: #7d7d80; }
+
+  .input-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .left-controls { display: flex; align-items: center; gap: 10px; }
+  .plus-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #232325;
+    border: none;
+    color: #ddd;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .plus-btn svg { width: 16px; height: 16px; }
+  .model-pill {
+    background: #1e1e20;
+    color: #ccc;
+    border-radius: 16px;
+    padding: 8px 14px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .model-pill b { color: #fff; font-weight: 600; }
+
+  .right-controls { display: flex; align-items: center; gap: 6px; }
+  .mic-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: #ccc;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .mic-btn svg { width: 19px; height: 19px; }
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    color: #000;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+  }
+  .send-btn svg { width: 19px; height: 19px; }
+  .send-btn:active { transform: scale(0.9); }
+
+  .chat-scroll::-webkit-scrollbar { width: 0; }
 </style>
 </head>
 <body>
+  <div class="phone">
 
-<!-- SCREEN SWITCHER -->
-<div class="tabs" id="tabs">
-  <button class="tab active" onclick="show('validation', this)">Validation</button>
-  <button class="tab" onclick="show('menu', this)">Menu</button>
-  <button class="tab" onclick="show('progress', this)">Progress</button>
-  <button class="tab" onclick="show('done', this)">Done</button>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!--  SCREEN 1: Validation                       -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="screen-wrapper" id="s-validation">
-  <div class="screen">
-    <div class="header">
-      <span class="header-title">VANS PATCH</span>
-      <span class="header-sub">Key Validation</span>
-      <span class="header-ver">v2.0</span>
+    <div class="topbar">
+      <button class="icon-btn" aria-label="menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </button>
+      <button class="icon-btn" aria-label="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+      </button>
     </div>
 
-    <div class="content">
-      <div class="id-box">
-        <span class="id-label">Console ID:</span>
-        <span class="id-value">4A3F9B2C1D8E7F6A5B4C3D2E1F0A9B8C</span>
-      </div>
-
-      <div class="section-label">Enter your activation key:</div>
-
-      <div class="key-box">
-        <span class="key-value">A1B2C3D4<span class="cursor"></span></span>
-      </div>
-
-      <div class="hint-text">
-        Send your Console ID to <span style="color:#00D4FF">@VansPatchPH</span> on Discord to receive your key.<br>
-        Press <span class="btn-hint btn-x">✕</span> to open the PS4 keyboard and type your key.<br>
-        Press <span class="btn-hint btn-op">⋯</span> OPTIONS to confirm.
+    <div class="chat-scroll" id="chatScroll">
+      <div class="empty-state" id="emptyState">
+        <div class="gear-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h1>Nnana AI</h1>
+        <div class="upgrade-card">
+          <p>Get more with Nnana Pro</p>
+          <button class="upgrade-btn">Upgrade</button>
+        </div>
       </div>
     </div>
 
-    <div class="footer">
-      <span class="footer-hint">
-        <span class="btn-hint btn-x">✕</span> Open keyboard &nbsp;&nbsp;
-        <span class="btn-hint btn-op">⋯</span> Confirm key
-      </span>
-      <span class="footer-credit">by Trio / Medo &nbsp;|&nbsp; Vans Patch PH</span>
+    <div class="input-wrap">
+      <div class="input-card">
+        <textarea id="msgInput" rows="1" placeholder="Chat with Nnana AI"></textarea>
+        <div class="input-controls">
+          <div class="left-controls">
+            <button class="plus-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            </button>
+            <div class="model-pill"><b>Nnana 8</b>&nbsp;Medium</div>
+          </div>
+          <div class="right-controls">
+            <button class="mic-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            </button>
+            <button class="send-btn" id="sendBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!--  SCREEN 2: Menu                             -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="screen-wrapper" id="s-menu" style="display:none">
-  <div class="screen">
-    <div class="header">
-      <span class="header-title">VANS PATCH</span>
-      <span class="header-sub">Main Menu</span>
-      <span class="header-ver">v2.0</span>
-    </div>
-
-    <div class="content">
-      <div class="menu-item focused" onclick="selectItem(0)">
-        <div class="item-label">Install Mod</div>
-        <div class="item-sub">Copy mod files to /user/data and /user/appmeta</div>
-      </div>
-      <div class="menu-item" onclick="selectItem(1)">
-        <div class="item-label">Uninstall Mod</div>
-        <div class="item-sub">Restore original files and remove mod files</div>
-      </div>
-      <div class="menu-item" onclick="selectItem(2)">
-        <div class="item-label">Exit</div>
-        <div class="item-sub">Close the installer</div>
-      </div>
-    </div>
-
-    <div class="footer">
-      <span class="footer-hint">
-        ↑↓ Navigate &nbsp;&nbsp;
-        <span class="btn-hint btn-x">✕</span> Select &nbsp;&nbsp;
-        <span class="btn-hint btn-o">○</span> Exit
-      </span>
-      <span class="footer-credit">by Trio / Medo &nbsp;|&nbsp; Vans Patch PH</span>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!--  SCREEN 3: Progress                         -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="screen-wrapper" id="s-progress" style="display:none">
-  <div class="screen">
-    <div class="header">
-      <span class="header-title">VANS PATCH</span>
-      <span class="header-sub">Installing...</span>
-      <span class="header-ver">v2.0</span>
-    </div>
-
-    <div class="content" style="position:relative">
-      <div class="progress-label">Copying files...</div>
-
-      <div class="progress-track">
-        <div class="progress-fill" id="prog-fill" style="width:62%"></div>
-      </div>
-
-      <div class="progress-counter">47 / 76 files</div>
-
-      <div class="progress-file" style="color:#888899; font-size:9px; margin-bottom:4px;">Current:</div>
-      <div class="progress-file">/user/data/dlcpacks/mpchristmas2/dlc.rpf</div>
-
-      <div style="position:absolute; top:0; right:0; color:#00D4FF; font-size:18px;"
-           id="dots">...</div>
-    </div>
-
-    <div class="footer">
-      <span class="footer-hint">Please wait...</span>
-      <span class="footer-credit">by Trio / Medo &nbsp;|&nbsp; Vans Patch PH</span>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════ -->
-<!--  SCREEN 4: Done                             -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="screen-wrapper" id="s-done" style="display:none">
-  <div class="screen">
-    <div class="header">
-      <span class="header-title">VANS PATCH</span>
-      <span class="header-sub">Complete</span>
-      <span class="header-ver">v2.0</span>
-    </div>
-
-    <div class="content">
-      <div class="done-headline success">Mod installed successfully!</div>
-      <div class="done-summary">76 files processed &nbsp;|&nbsp; 76 succeeded &nbsp;|&nbsp; 0 failed</div>
-
-      <div style="height:1px; background:#2A2A4A; margin: 16px 0;"></div>
-
-      <div style="color:#888899; font-size:9px; line-height:2;">
-        Files copied to <span style="color:#00D4FF">/user/data/</span> and <span style="color:#00D4FF">/user/appmeta/</span><br>
-        Backups saved to <span style="color:#888899">/user/data/VansPatch_Backup/</span><br>
-        Log file: <span style="color:#888899">/user/data/VansPatch.log</span>
-      </div>
-    </div>
-
-    <div class="footer">
-      <span class="footer-hint">
-        <span class="btn-hint btn-o">○</span> Back to menu &nbsp;&nbsp;
-        <span class="btn-hint btn-op">⋯</span> Exit
-      </span>
-      <span class="footer-credit">by Trio / Medo &nbsp;|&nbsp; Vans Patch PH</span>
-    </div>
-  </div>
-</div>
 
 <script>
-  function show(name, btn) {
-    ['validation','menu','progress','done'].forEach(s => {
-      document.getElementById('s-' + s).style.display = 'none';
-    });
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('s-' + name).style.display = 'flex';
-    btn.classList.add('active');
+  const chatScroll = document.getElementById('chatScroll');
+  const emptyState = document.getElementById('emptyState');
+  const input = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  function scrollToBottom() {
+    chatScroll.scrollTop = chatScroll.scrollHeight;
   }
 
-  function selectItem(idx) {
-    document.querySelectorAll('.menu-item').forEach((el, i) => {
-      el.classList.toggle('focused', i === idx);
-    });
-  }
-
-  // Animate progress bar
-  let prog = 62;
-  setInterval(() => {
-    if (document.getElementById('s-progress').style.display !== 'none') {
-      prog = Math.min(100, prog + 0.3);
-      document.getElementById('prog-fill').style.width = prog + '%';
+  function addBubble(text, who) {
+    if (emptyState && emptyState.parentNode) {
+      emptyState.remove();
     }
-  }, 100);
+    const row = document.createElement('div');
+    row.className = 'bubble-row ' + who;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + who;
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    chatScroll.appendChild(row);
+    scrollToBottom();
+  }
 
-  // Animate dots
-  let d = 0;
-  const dotFrames = ['.  ', '.. ', '...', '   '];
-  setInterval(() => {
-    const el = document.getElementById('dots');
-    if (el) el.textContent = dotFrames[d++ % 4];
-  }, 400);
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'bubble-row bot';
+    row.id = 'typingRow';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble bot typing';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    row.appendChild(bubble);
+    chatScroll.appendChild(row);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    const row = document.getElementById('typingRow');
+    if (row) row.remove();
+  }
+
+  function getReply(text) {
+    const normalized = text.trim().toLowerCase().replace(/[!.?]/g, '');
+    if (normalized.includes('nnana')) {
+      return "Hi Vans!, Ready to make something?";
+    }
+    const fallbacks = [
+      "Got it, Vans — tell me more about what you're thinking.",
+      "Sounds good! What should we build first?",
+      "I'm listening — go ahead.",
+      "Nice, let's dig into that."
+    ];
+    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  }
+
+  function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    addBubble(text, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+    showTyping();
+    const delay = 700 + Math.random() * 500;
+    setTimeout(() => {
+      removeTyping();
+      addBubble(getReply(text), 'bot');
+    }, delay);
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+  });
 </script>
 </body>
 </html>
