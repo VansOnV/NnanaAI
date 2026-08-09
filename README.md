@@ -1,3 +1,6 @@
 # EXPERIMENTAL
-dont go here bro
-vansonv.github.io/priv
+fun stuff
+
+<b>
+
+https://vansonv.github.io/priv
