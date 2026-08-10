@@ -1,7 +1,7 @@
 {
   "name": "Nnana AI",
   "short_name": "Nnana AI",
-  "start_url": "./index.html",
+  "start_url": "https://github.com/VansOnV/NnanaAI/blob/main/index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
