@@ -21,6 +21,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow: hidden;
   }
 
   /* Top bar */
@@ -41,6 +42,8 @@
     border: none;
   }
   .icon-btn svg { width: 20px; height: 20px; }
+  .icon-btn.small { width: 32px; height: 32px; }
+  .icon-btn.small svg { width: 15px; height: 15px; }
 
   /* Chat area */
   .chat-scroll {
@@ -61,6 +64,7 @@
     text-align: center;
     gap: 20px;
     padding-bottom: 40px;
+    min-height: 100%;
   }
   .gear-badge {
     width: 84px; height: 84px;
@@ -234,6 +238,154 @@
   .limit-upgrade-btn:disabled { opacity: 0.6; }
   .limit-note { font-size: 11px; color: #5f5b52; text-align: center; margin-top: 9px; }
 
+  /* Shared bottom-sheet modal */
+  .modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 50;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    width: 100%; max-width: 460px;
+    background: #111113;
+    border: 1px solid #232325;
+    border-bottom: none;
+    border-radius: 26px 26px 0 0;
+    padding: 20px 22px 28px;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(.2,.8,.2,1);
+    max-height: 82dvh;
+    overflow-y: auto;
+  }
+  .modal-overlay.open .sheet { transform: translateY(0); }
+  .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .sheet-header-title { font-size: 15px; font-weight: 700; color: #e6e6e6; }
+
+  /* Pro subscription sheet */
+  .pro-badge {
+    width: 62px; height: 62px; border-radius: 18px;
+    background: radial-gradient(circle at 30% 25%, #6bd486, #2f9450 75%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 6px auto 14px;
+  }
+  .pro-badge svg { width: 30px; height: 30px; color: #0d3319; }
+  .pro-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .pro-sub { text-align: center; font-size: 13px; color: #9a9a9d; margin-bottom: 22px; }
+  .pro-price-row { text-align: center; margin-bottom: 22px; }
+  .pro-price { font-size: 46px; font-weight: 800; letter-spacing: -1px; }
+  .pro-price sup { font-size: 18px; font-weight: 700; position: relative; top: -22px; margin-right: 2px; }
+  .pro-period { font-size: 15px; color: #9a9a9d; margin-left: 3px; }
+  .pro-compare { display: flex; gap: 10px; margin-bottom: 20px; }
+  .pro-plan-col { flex: 1; background: #17171a; border: 1px solid #232325; border-radius: 14px; padding: 12px 12px 13px; }
+  .pro-plan-col.highlight { border-color: #3f9e5c; background: #10190f; }
+  .pro-plan-name { font-size: 12.5px; font-weight: 700; color: #cfcfcf; margin-bottom: 8px; }
+  .pro-plan-col.highlight .pro-plan-name { color: #6bd486; }
+  .pro-plan-item { font-size: 11.5px; color: #9a9a9d; margin-bottom: 5px; display: flex; gap: 5px; align-items: flex-start; }
+  .pro-plan-item svg { width: 12px; height: 12px; flex-shrink: 0; margin-top: 2px; }
+  .pro-plan-item.yes svg { color: #6bd486; }
+  .pro-plan-item.no svg { color: #55555a; }
+  .pro-features { display: flex; flex-direction: column; gap: 13px; margin-bottom: 24px; }
+  .pro-feature { display: flex; align-items: center; gap: 10px; font-size: 14.5px; color: #e6e6e6; }
+  .pro-feature svg { width: 18px; height: 18px; color: #6bd486; flex-shrink: 0; }
+  .pro-subscribe-btn {
+    width: 100%; background: #fff; color: #000; border: none;
+    border-radius: 24px; padding: 15px 0; font-size: 16px; font-weight: 700; cursor: pointer;
+    margin-bottom: 10px; transition: transform 0.12s ease, background 0.2s ease;
+  }
+  .pro-subscribe-btn:active { transform: scale(0.97); }
+  .pro-subscribe-btn.success { background: #6bd486; }
+  .pro-cancel {
+    display: block; width: 100%; text-align: center; font-size: 13.5px; color: #8a8a8d;
+    background: none; border: none; cursor: pointer; padding: 6px;
+  }
+  .pro-demo-note { text-align: center; font-size: 11px; color: #5f5b52; margin-top: 10px; }
+
+  /* Model picker sheet */
+  .model-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 6px; border-radius: 12px; cursor: pointer;
+  }
+  .model-row:active { background: #1a1a1c; }
+  .model-row-main { display: flex; flex-direction: column; gap: 2px; }
+  .model-row-name { font-size: 14.5px; font-weight: 600; color: #f0f0f0; }
+  .model-row-desc { font-size: 12px; color: #8a8a8d; }
+  .model-row .check { width: 18px; height: 18px; color: #6bd486; opacity: 0; flex-shrink: 0; }
+  .model-row.selected .check { opacity: 1; }
+
+  /* Sidebar drawer */
+  .sidebar-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 60;
+  }
+  .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+  .sidebar-panel {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 82%; max-width: 320px;
+    background: #0c0c0d;
+    border-right: 1px solid #1e1e20;
+    display: flex; flex-direction: column;
+    padding: 18px 14px 14px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(.2,.8,.2,1);
+  }
+  .sidebar-overlay.open .sidebar-panel { transform: translateX(0); }
+  .sidebar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 0 4px; }
+  .sidebar-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+  .sidebar-brand .mini-gear {
+    width: 24px; height: 24px; border-radius: 7px;
+    background: radial-gradient(circle at 30% 25%, #6bd486, #2f9450 75%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sidebar-brand .mini-gear svg { width: 13px; height: 13px; color: #0d3319; }
+  .new-chat-btn {
+    display: flex; align-items: center; gap: 9px;
+    background: #1c1c1e; border: 1px solid #262628; color: #f0f0f0;
+    border-radius: 12px; padding: 11px 13px; font-size: 14.5px; font-weight: 600;
+    cursor: pointer; margin-bottom: 12px; transition: background 0.15s ease;
+  }
+  .new-chat-btn:active { background: #232325; }
+  .new-chat-btn svg { width: 16px; height: 16px; color: #6bd486; }
+  .sidebar-search {
+    display: flex; align-items: center; gap: 8px;
+    background: #161617; border-radius: 10px; padding: 9px 11px; margin-bottom: 14px;
+  }
+  .sidebar-search svg { width: 14px; height: 14px; color: #7d7d80; flex-shrink: 0; }
+  .sidebar-search input {
+    background: transparent; border: none; outline: none; color: #fff; font-size: 13.5px;
+    width: 100%; font-family: inherit;
+  }
+  .sidebar-search input::placeholder { color: #6c6c6f; }
+  .sidebar-section-label {
+    font-size: 11.5px; font-weight: 600; color: #6c6c6f; text-transform: uppercase;
+    letter-spacing: 0.03em; padding: 0 4px; margin-bottom: 6px;
+  }
+  .chat-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+  .chat-list::-webkit-scrollbar { width: 0; }
+  .chat-item {
+    display: block; width: 100%; text-align: left; background: none; border: none; color: #c8c8ca;
+    font-size: 13.8px; padding: 10px 10px; border-radius: 9px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .chat-item:active { background: #1a1a1c; }
+  .chat-item.active { background: #1c2b1f; color: #fff; }
+  .sidebar-empty { font-size: 12.5px; color: #5f5f62; padding: 10px; }
+  .sidebar-footer { border-top: 1px solid #1c1c1e; padding-top: 12px; }
+  .sidebar-profile { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-radius: 10px; }
+  .profile-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: #2f7a45; color: #fff;
+    font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .profile-info { min-width: 0; }
+  .profile-name { font-size: 13.5px; font-weight: 600; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .profile-plan { font-size: 11.5px; color: #8a8a8d; margin-top: 1px; }
+
   /* Input area */
   .input-wrap { padding: 8px 16px 24px; flex-shrink: 0; }
   .input-card {
@@ -258,8 +410,8 @@
   }
   .plus-btn svg { width: 16px; height: 16px; }
   .model-pill {
-    background: #1e1e20; color: #ccc; border-radius: 16px; padding: 8px 14px; font-size: 14px;
-    display: flex; align-items: center; gap: 4px; cursor: pointer;
+    background: #1e1e20; color: #ccc; border: none; border-radius: 16px; padding: 8px 14px; font-size: 14px;
+    display: flex; align-items: center; gap: 4px; cursor: pointer; font-family: inherit;
   }
   .model-pill b { color: #fff; font-weight: 600; }
 
@@ -311,11 +463,11 @@
   <div class="phone">
 
     <div class="topbar">
-      <button class="icon-btn" aria-label="menu">
+      <button class="icon-btn" id="menuBtn" aria-label="menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
       </button>
-      <button class="icon-btn" aria-label="profile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+      <button class="icon-btn" id="newChatTopBtn" aria-label="new chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
     </div>
 
@@ -327,7 +479,7 @@
         <h1>Nnana AI</h1>
         <div class="upgrade-card">
           <p>Get more with Nnana Pro</p>
-          <button class="upgrade-btn">Upgrade</button>
+          <button class="upgrade-btn" id="upgradeCardBtn">Upgrade</button>
         </div>
       </div>
     </div>
@@ -340,7 +492,7 @@
             <button class="plus-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
             </button>
-            <div class="model-pill"><b>Nnana 8</b>&nbsp;Medium</div>
+            <button class="model-pill" id="modelPillBtn"><span id="modelPillLabel"><b>Nnana 8</b>&nbsp;Medium</span></button>
           </div>
           <div class="right-controls">
             <button class="mic-btn">
@@ -355,23 +507,154 @@
         </div>
       </div>
     </div>
+
+    <!-- Pro subscription sheet -->
+    <div class="modal-overlay" id="proModal">
+      <div class="sheet">
+        <div class="sheet-header">
+          <span></span>
+          <button class="icon-btn small" id="proClose" aria-label="close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="pro-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="pro-title" id="proTitle">Nnana Pro</div>
+        <div class="pro-sub">Unlimited builds. Unlimited fixes.</div>
+        <div class="pro-price-row">
+          <span class="pro-price"><sup>$</sup>999</span><span class="pro-period">/ month</span>
+        </div>
+
+        <div class="pro-compare">
+          <div class="pro-plan-col">
+            <div class="pro-plan-name">Free</div>
+            <div class="pro-plan-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>1 script build</span></div>
+            <div class="pro-plan-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>1 fix / 30 days</span></div>
+            <div class="pro-plan-item no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Priority speed</span></div>
+          </div>
+          <div class="pro-plan-col highlight">
+            <div class="pro-plan-name">Pro</div>
+            <div class="pro-plan-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Unlimited builds</span></div>
+            <div class="pro-plan-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Unlimited fixes</span></div>
+            <div class="pro-plan-item yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Priority speed</span></div>
+          </div>
+        </div>
+
+        <button class="pro-subscribe-btn" id="proSubscribe">Subscribe for $999/month</button>
+        <button class="pro-cancel" id="proCancel">Maybe later</button>
+        <div class="pro-demo-note">Demo only — no real purchase happens here</div>
+      </div>
+    </div>
+
+    <!-- Model picker sheet -->
+    <div class="modal-overlay" id="modelModal">
+      <div class="sheet">
+        <div class="sheet-header">
+          <span class="sheet-header-title">Choose a model</span>
+          <button class="icon-btn small" id="modelClose" aria-label="close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div id="modelList" style="margin-top: 10px;"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar drawer -->
+    <div class="sidebar-overlay" id="sidebarOverlay">
+      <div class="sidebar-panel">
+        <div class="sidebar-top">
+          <div class="sidebar-brand">
+            <div class="mini-gear">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+            </div>
+            <span>Nnana AI</span>
+          </div>
+          <button class="icon-btn small" id="sidebarClose" aria-label="close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <button class="new-chat-btn" id="newChatBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New chat</span>
+        </button>
+
+        <div class="sidebar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="chatSearchInput" placeholder="Search chats">
+        </div>
+
+        <div class="sidebar-section-label">Recents</div>
+        <div class="chat-list" id="chatList"></div>
+
+        <div class="sidebar-footer">
+          <div class="sidebar-profile">
+            <div class="profile-avatar" id="profileAvatar">V</div>
+            <div class="profile-info">
+              <div class="profile-name" id="profileName">Vans</div>
+              <div class="profile-plan" id="profilePlan">Free plan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 <script>
   const chatScroll = document.getElementById('chatScroll');
-  const emptyState = document.getElementById('emptyState');
   const input = document.getElementById('msgInput');
   const sendBtn = document.getElementById('sendBtn');
   const inputCard = document.getElementById('inputCard');
 
   const MOD_ZIP_B64 = "UEsDBBQAAAAIAIJcCV1vm7ngwQAAABgBAAAKAAAAUkVBRE1FLnR4dCWPQW7EMAhF9znF16xaadqeoctsumoPQG0yQXHAshmluX3xzAoQ/78P36t0LFIYB3XcWLmRc8bvCcLPjN3Sdq8fmXcD1YqXy5eSEj7ny+v7NM2O8BNqocSrlcztSUuNH5x6b1xOuGEgtPvA41jJQdNQvmU7tBhl8F/lJqyJUcy2jiIbQ7RL5ohYKKY0jKLObYnA5wHZuEPNkUydREF6IuILbrRzfJBlkUQuplf01KT6FdbGYlqiDvlDGX0gupUA/wNQSwECFAMUAAAACACCXAldb5u54MEAAAAYAQAACgAAAAAAAAAAAAAApIEAAAAAUkVBRE1FLnR4dFBLBQYAAAAAAQABADgAAADpAAAAAAA=";
 
+  const EMPTY_STATE_HTML = document.getElementById('emptyState').outerHTML;
+
   let busy = false;
   let userName = 'Vans';
+  let proActive = false;
+
+  // Per-chat state (build/fix/limit progress belongs to the conversation it happened in)
   let hasBuiltMod = false;
   let hasFixedOnce = false;
   let limitReached = false;
   let modVersion = 1;
+
+  function defaultChatState() {
+    return { hasBuiltMod: false, hasFixedOnce: false, limitReached: false, modVersion: 1 };
+  }
+  function genId() {
+    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  // Seed a couple of believable past chats so the sidebar feels lived-in.
+  const chats = [
+    {
+      id: genId(),
+      title: 'Weekend trip ideas',
+      html: '<div class="bubble-row user"><div class="bubble user">give me some chill weekend trip ideas, nothing too far</div></div>' +
+            '<div class="bubble-row bot"><div class="bubble bot">A few easy ones: a lakeside cabin for one night, a day hike somewhere nearby, or a low-key food crawl in a town you haven\'t explored yet.</div></div>',
+      state: defaultChatState()
+    },
+    {
+      id: genId(),
+      title: 'GTA V splitscreen setup',
+      html: '<div class="bubble-row user"><div class="bubble user">can u help me get 2 player splitscreen working for gta 5 on ps4</div></div>' +
+            '<div class="bubble-row bot"><div class="bubble bot">Yeah, I can walk you through that — want me to build the script mod for you?</div></div>',
+      state: defaultChatState()
+    }
+  ];
+  let currentChat = { id: genId(), title: 'New chat', html: null, state: defaultChatState() };
+
+  const MODELS = [
+    { name: 'Nnana 9', tier: 'Opus', desc: 'Most capable, slower' },
+    { name: 'Nnana 8', tier: 'Medium', desc: 'Balanced for everyday use' },
+    { name: 'Nnana 8', tier: 'Fast', desc: 'Fastest responses' },
+    { name: 'Nnana', tier: 'Mini', desc: 'Lightweight & quick' }
+  ];
+  let currentModel = MODELS[1];
 
   function haptic(pattern) {
     if (navigator.vibrate) {
@@ -384,7 +667,8 @@
   }
 
   function clearEmptyState() {
-    if (emptyState && emptyState.parentNode) emptyState.remove();
+    const es = chatScroll.querySelector('.empty-state');
+    if (es) es.remove();
   }
 
   function addUserBubble(text) {
@@ -417,7 +701,6 @@
     if (row) row.remove();
   }
 
-  // Streams text word-by-word into a bot bubble, like real token streaming.
   function streamBotText(text) {
     return new Promise((resolve) => {
       clearEmptyState();
@@ -493,16 +776,7 @@
       <div class="limit-note">Demo only — no real purchase happens here</div>
     `;
     const btn = card.querySelector('.limit-upgrade-btn');
-    btn.addEventListener('click', () => {
-      haptic([10, 20, 10]);
-      btn.disabled = true;
-      const original = btn.textContent;
-      btn.textContent = 'Opening checkout…';
-      setTimeout(() => {
-        btn.textContent = original;
-        btn.disabled = false;
-      }, 900);
-    });
+    btn.addEventListener('click', () => { haptic([10, 20, 10]); openProModal(); });
     row.appendChild(card);
     chatScroll.appendChild(row);
     scrollToBottom();
@@ -535,7 +809,6 @@
     sendBtn.classList.toggle('has-text', input.value.trim().length > 0);
   }
 
-  // Generic multi-step "working" card used for both building and fixing.
   function runStepFlow(cardLabel, doneLabel, steps, durations) {
     return new Promise((resolve) => {
       clearEmptyState();
@@ -585,7 +858,7 @@
           title.querySelector('span').textContent = doneLabel;
           title.querySelector('svg').outerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
           haptic([10, 30, 10]);
-          setTimeout(() => resolve(row), 400);
+          setTimeout(() => resolve(row), 300);
           return;
         }
         stepEls[idx].classList.add('active');
@@ -625,7 +898,7 @@
       'Compiling and packaging files',
       'Running final checks'
     ];
-    const durations = [3200, 4600, 5600, 3800, 4400, 3600, 2800]; // ~28s
+    const durations = [200, 300, 350, 300, 300, 300, 250]; // ~2s
     return runStepFlow('Building gta5-splitscreen-mod.zip', 'Build complete', steps, durations);
   }
 
@@ -636,7 +909,7 @@
       'Patching camera + input sync',
       'Re-testing stability'
     ];
-    const durations = [2600, 3400, 3800, 2600]; // ~12.4s
+    const durations = [400, 600, 600, 400]; // ~2s
     return runStepFlow('Patching gta5-splitscreen-mod.zip', 'Patch complete', steps, durations);
   }
 
@@ -669,7 +942,6 @@
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   }
 
-  // Picks up "I'm X", "my name is X", "call me X" style intros.
   function detectNameIntro(text) {
     const m = text.match(/\b(?:i am|i'm|im|my name is|name's|call me|this is)\s+([a-zA-Z]{2,20})\b/i);
     if (m) return toTitleCase(m[1]);
@@ -688,26 +960,167 @@
     return t.includes('who am i') || t.includes('do you know who i am') || t.includes('guess who i am');
   }
 
-  const greetReplies = [
-    `Hey ${'{name}'}! Ready to make something?`,
-    `Hi ${'{name}'}! What are we building today?`,
-    `Yo ${'{name}'} — what's on your mind?`
-  ];
-
+  const greetReplies = ['Hey {name}! Ready to make something?', 'Hi {name}! What are we building today?', "Yo {name} — what's on your mind?"];
   const fallbacks = [
-    `Got it, ${'{name}'} — tell me more about what you're thinking.`,
-    `Sounds good, ${'{name}'}! What should we build first?`,
-    `I'm listening — go ahead.`,
-    `Nice, let's dig into that.`
+    "Got it, {name} — tell me more about what you're thinking.",
+    'Sounds good, {name}! What should we build first?',
+    "I'm listening — go ahead.",
+    "Nice, let's dig into that."
   ];
+  function fillName(template) { return template.replace('{name}', userName); }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  function fillName(template) {
-    return template.replace('{name}', userName);
+  function updateSidebarProfile() {
+    document.getElementById('profileName').textContent = userName;
+    document.getElementById('profileAvatar').textContent = userName.charAt(0).toUpperCase();
+    document.getElementById('profilePlan').textContent = proActive ? 'Pro plan' : 'Free plan';
   }
 
-  function pick(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+  // ----- Multi-chat: sidebar, new chat, revisiting past chats -----
+
+  function renderChatList(filterText) {
+    const listEl = document.getElementById('chatList');
+    listEl.innerHTML = '';
+    const q = (filterText || '').trim().toLowerCase();
+    const visible = chats.filter((c) => !q || c.title.toLowerCase().includes(q));
+    if (visible.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'sidebar-empty';
+      empty.textContent = q ? 'No chats found' : 'No chats yet';
+      listEl.appendChild(empty);
+      return;
+    }
+    visible.forEach((chat) => {
+      const item = document.createElement('button');
+      item.className = 'chat-item' + (chat.id === currentChat.id ? ' active' : '');
+      item.textContent = chat.title;
+      item.addEventListener('click', () => switchToChat(chat));
+      listEl.appendChild(item);
+    });
   }
+
+  function saveCurrentChatSnapshot() {
+    const hasContent = !chatScroll.querySelector('.empty-state');
+    if (hasContent) currentChat.html = chatScroll.innerHTML;
+    currentChat.state = { hasBuiltMod, hasFixedOnce, limitReached, modVersion };
+  }
+
+  function loadChat(chat) {
+    chatScroll.innerHTML = chat.html || EMPTY_STATE_HTML;
+    hasBuiltMod = chat.state.hasBuiltMod;
+    hasFixedOnce = chat.state.hasFixedOnce;
+    limitReached = chat.state.limitReached;
+    modVersion = chat.state.modVersion;
+    scrollToBottom();
+  }
+
+  function switchToChat(chat) {
+    if (chat.id !== currentChat.id) {
+      saveCurrentChatSnapshot();
+      currentChat = chat;
+      loadChat(chat);
+      renderChatList(document.getElementById('chatSearchInput').value);
+    }
+    closeSidebar();
+  }
+
+  function startNewChat() {
+    saveCurrentChatSnapshot();
+    currentChat = { id: genId(), title: 'New chat', html: null, state: defaultChatState() };
+    hasBuiltMod = false; hasFixedOnce = false; limitReached = false; modVersion = 1;
+    chatScroll.innerHTML = EMPTY_STATE_HTML;
+    renderChatList(document.getElementById('chatSearchInput').value);
+    closeSidebar();
+    haptic(10);
+  }
+
+  function ensureChatSaved(firstMessageText) {
+    if (currentChat.title === 'New chat') {
+      currentChat.title = firstMessageText.length > 42 ? firstMessageText.slice(0, 42) + '…' : firstMessageText;
+    }
+    if (!chats.includes(currentChat)) chats.unshift(currentChat);
+    renderChatList(document.getElementById('chatSearchInput').value);
+  }
+
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  function openSidebar() { renderChatList(''); document.getElementById('chatSearchInput').value = ''; sidebarOverlay.classList.add('open'); }
+  function closeSidebar() { sidebarOverlay.classList.remove('open'); }
+
+  document.getElementById('menuBtn').addEventListener('click', () => { haptic(8); openSidebar(); });
+  document.getElementById('sidebarClose').addEventListener('click', () => { haptic(8); closeSidebar(); });
+  sidebarOverlay.addEventListener('click', (e) => { if (e.target === sidebarOverlay) closeSidebar(); });
+  document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+  document.getElementById('newChatTopBtn').addEventListener('click', startNewChat);
+  document.getElementById('chatSearchInput').addEventListener('input', (e) => renderChatList(e.target.value));
+
+  // ----- Model picker -----
+
+  const modelModal = document.getElementById('modelModal');
+  function renderModelList() {
+    const listEl = document.getElementById('modelList');
+    listEl.innerHTML = '';
+    MODELS.forEach((m) => {
+      const row = document.createElement('div');
+      const isSelected = m.name === currentModel.name && m.tier === currentModel.tier;
+      row.className = 'model-row' + (isSelected ? ' selected' : '');
+      row.innerHTML = `
+        <div class="model-row-main">
+          <div class="model-row-name">${m.name} ${m.tier}</div>
+          <div class="model-row-desc">${m.desc}</div>
+        </div>
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      `;
+      row.addEventListener('click', () => {
+        currentModel = m;
+        haptic(8);
+        document.getElementById('modelPillLabel').innerHTML = `<b>${m.name}</b>&nbsp;${m.tier}`;
+        renderModelList();
+        setTimeout(closeModelModal, 200);
+      });
+      listEl.appendChild(row);
+    });
+  }
+  function openModelModal() { renderModelList(); modelModal.classList.add('open'); }
+  function closeModelModal() { modelModal.classList.remove('open'); }
+
+  document.getElementById('modelPillBtn').addEventListener('click', () => { haptic(8); openModelModal(); });
+  document.getElementById('modelClose').addEventListener('click', () => { haptic(8); closeModelModal(); });
+  modelModal.addEventListener('click', (e) => { if (e.target === modelModal) closeModelModal(); });
+
+  // ----- Pro subscription modal -----
+
+  const proModal = document.getElementById('proModal');
+  function openProModal() { proModal.classList.add('open'); }
+  function closeProModal() { proModal.classList.remove('open'); }
+
+  document.getElementById('proClose').addEventListener('click', () => { haptic(8); closeProModal(); });
+  document.getElementById('proCancel').addEventListener('click', () => { haptic(8); closeProModal(); });
+  document.getElementById('upgradeCardBtn').addEventListener('click', () => { haptic(8); openProModal(); });
+  proModal.addEventListener('click', (e) => { if (e.target === proModal) closeProModal(); });
+
+  const proSubscribe = document.getElementById('proSubscribe');
+  proSubscribe.addEventListener('click', () => {
+    haptic([10, 20, 10]);
+    proSubscribe.disabled = true;
+    proSubscribe.textContent = 'Processing…';
+    setTimeout(() => {
+      proSubscribe.classList.add('success');
+      proSubscribe.textContent = 'Subscribed ✓';
+      haptic([10, 30, 10]);
+      setTimeout(async () => {
+        closeProModal();
+        limitReached = false;
+        proActive = true;
+        updateSidebarProfile();
+        proSubscribe.disabled = false;
+        proSubscribe.classList.remove('success');
+        proSubscribe.textContent = 'Subscribe for $999/month';
+        await streamBotText(`Nnana Pro activated, ${userName} — unlimited fixes unlocked!`);
+      }, 1000);
+    }, 900);
+  });
+
+  // ----- Sending messages -----
 
   async function handleSend() {
     if (busy) return;
@@ -715,39 +1128,40 @@
     if (!text) return;
 
     addUserBubble(text);
+    ensureChatSaved(text);
     input.value = '';
     input.style.height = 'auto';
     updateSendIcon();
     haptic(10);
     setBusy(true);
 
-    // 1) Build the mod
     if (isModRequest(text)) {
       addTyping();
-      await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
+      await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
       removeTyping();
-      await streamBotText(`On it, ${userName} — building a 2 player splitscreen setup for GTA V on PS4. This'll take a moment.`);
+      await streamBotText(`On it, ${userName} — building a 2 player splitscreen setup for GTA V on PS4.`);
       await runBuildFlow();
-      await streamBotText('Here\'s a working 2 player split screen mod for GTA 5 PS4!');
+      await streamBotText("Here's a working 2 player split screen mod for GTA 5 PS4!");
       addFileCard('gta5-splitscreen-mod.zip', '2.4 MB');
       hasBuiltMod = true;
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 2) Fix/patch the mod (only offered after a build happened)
     if (isFixRequest(text)) {
       if (limitReached) {
         addTyping();
-        await new Promise((r) => setTimeout(r, 500 + Math.random() * 300));
+        await new Promise((r) => setTimeout(r, 400 + Math.random() * 250));
         removeTyping();
         await streamBotText(`You're still at your daily limit, ${userName} — upgrade to Nnana Pro to keep fixing.`);
         addLimitCard();
+        saveCurrentChatSnapshot();
         setBusy(false);
         return;
       }
       addTyping();
-      await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+      await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
       removeTyping();
       await streamBotText(`Got it — let me take a look at what's making it unstable.`);
       await runFixFlow();
@@ -755,11 +1169,11 @@
       await streamBotText(`Fixed it, ${userName}! The split screen sync bug is patched — it should run stable now.`);
       addFileCard(`gta5-splitscreen-mod-v${modVersion}.zip`, '2.5 MB');
       hasFixedOnce = true;
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 3) "It's still broken" after a fix — trips the fake usage limit
     if (isStillBrokenRequest(text)) {
       addTyping();
       await new Promise((r) => setTimeout(r, 700 + Math.random() * 400));
@@ -771,48 +1185,50 @@
       await streamBotText(`Looks like you've hit your daily limit for script fixes.`);
       addLimitCard();
       limitReached = true;
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 4) Name introduction
     const introName = detectNameIntro(text);
     if (introName) {
       userName = introName;
+      updateSidebarProfile();
       addTyping();
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
       removeTyping();
       await streamBotText(`Hi ${userName}, how are you?`);
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 5) "Who am I"
     if (isWhoAmI(text)) {
       addTyping();
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 350));
       removeTyping();
       await streamBotText(userName === 'Vans' ? "I don't know yet — what's your name?" : `You're ${userName}, of course!`);
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 6) Plain greeting
     if (isGreeting(text)) {
       addTyping();
       await new Promise((r) => setTimeout(r, 450 + Math.random() * 300));
       removeTyping();
       await streamBotText(fillName(pick(greetReplies)));
+      saveCurrentChatSnapshot();
       setBusy(false);
       return;
     }
 
-    // 7) Default fallback
     const thinkDelay = 500 + Math.min(text.length * 12, 1200) + Math.random() * 400;
     addTyping();
     await new Promise((r) => setTimeout(r, thinkDelay));
     removeTyping();
     await streamBotText(fillName(pick(fallbacks)));
+    saveCurrentChatSnapshot();
     setBusy(false);
   }
 
@@ -846,6 +1262,10 @@
 
   input.addEventListener('focus', () => { inputCard.style.borderColor = '#3a3a3c'; });
   input.addEventListener('blur', () => { inputCard.style.borderColor = '#202022'; });
+
+  // init
+  updateSidebarProfile();
+  renderChatList('');
 </script>
 </body>
 </html>
