@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nnana AI</title>
+
+<!-- Home screen / PWA icons -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<!-- iOS: "Add to Home Screen" -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Nnana AI">
+
+<!-- Android / Chrome -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -748,7 +765,7 @@
       </div>
       <div class="file-meta">
         <div class="file-name">${filename}</div>
-        <div class="file-sub">${sizeLabel} · ZIP Archive</div>
+        <div class="file-sub">${sizeLabel} · SPRX Plugin</div>
       </div>
       <div class="file-dl">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
@@ -788,7 +805,7 @@
     const byteNumbers = new Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'application/zip' });
+    const blob = new Blob([byteArray], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -801,8 +818,16 @@
 
   function setBusy(state) {
     busy = state;
-    input.disabled = state;
+    input.disabled = state || limitReached;
     sendBtn.classList.toggle('busy', state);
+    if (!state) updateInputLockUI();
+  }
+
+  function updateInputLockUI() {
+    input.placeholder = limitReached ? 'Upgrade to Nnana Pro to keep chatting' : 'Chat with Nnana AI';
+    input.disabled = busy || limitReached;
+    sendBtn.disabled = limitReached && !busy;
+    sendBtn.style.opacity = limitReached ? '0.35' : '';
   }
 
   function updateSendIcon() {
@@ -899,7 +924,7 @@
       'Running final checks'
     ];
     const durations = [200, 300, 350, 300, 300, 300, 250]; // ~2s
-    return runStepFlow('Building gta5-splitscreen-mod.zip', 'Build complete', steps, durations);
+    return runStepFlow('Building gta5-splitscreen-mod.sprx', 'Build complete', steps, durations);
   }
 
   function runFixFlow() {
@@ -910,7 +935,7 @@
       'Re-testing stability'
     ];
     const durations = [400, 600, 600, 400]; // ~2s
-    return runStepFlow('Patching gta5-splitscreen-mod.zip', 'Patch complete', steps, durations);
+    return runStepFlow('Patching gta5-splitscreen-mod.sprx', 'Patch complete', steps, durations);
   }
 
   function isModRequest(text) {
@@ -926,16 +951,6 @@
     const mentionsFix = t.includes('fix') || t.includes('unstable') || t.includes('crash') || t.includes('broken') || t.includes('bug');
     const mentionsThing = /\b(mod|script|splitscreen|split screen|it)\b/.test(t);
     return mentionsFix && mentionsThing;
-  }
-
-  function isStillBrokenRequest(text) {
-    if (!hasFixedOnce) return false;
-    const t = text.toLowerCase();
-    const stillWord = /\b(still|again)\b/.test(t) || t.includes('not fixed');
-    const brokenWord = /\b(broken|crash(ing)?|unstable|buggy|glitch(y|ing)?)\b/.test(t)
-      || t.includes("doesn't work") || t.includes('does not work')
-      || t.includes("didn't work") || t.includes('not working');
-    return stillWord && brokenWord;
   }
 
   function toTitleCase(s) {
@@ -1011,6 +1026,7 @@
     hasFixedOnce = chat.state.hasFixedOnce;
     limitReached = chat.state.limitReached;
     modVersion = chat.state.modVersion;
+    updateInputLockUI();
     scrollToBottom();
   }
 
@@ -1029,6 +1045,7 @@
     currentChat = { id: genId(), title: 'New chat', html: null, state: defaultChatState() };
     hasBuiltMod = false; hasFixedOnce = false; limitReached = false; modVersion = 1;
     chatScroll.innerHTML = EMPTY_STATE_HTML;
+    updateInputLockUI();
     renderChatList(document.getElementById('chatSearchInput').value);
     closeSidebar();
     haptic(10);
@@ -1112,6 +1129,7 @@
         limitReached = false;
         proActive = true;
         updateSidebarProfile();
+        updateInputLockUI();
         proSubscribe.disabled = false;
         proSubscribe.classList.remove('success');
         proSubscribe.textContent = 'Subscribe for $999/month';
@@ -1124,6 +1142,7 @@
 
   async function handleSend() {
     if (busy) return;
+    if (limitReached) return; // hard lockout — shouldn't normally be reachable since the input is disabled too
     const text = input.value.trim();
     if (!text) return;
 
@@ -1142,7 +1161,7 @@
       await streamBotText(`On it, ${userName} — building a 2 player splitscreen setup for GTA V on PS4.`);
       await runBuildFlow();
       await streamBotText("Here's a working 2 player split screen mod for GTA 5 PS4!");
-      addFileCard('gta5-splitscreen-mod.zip', '2.4 MB');
+      addFileCard('gta5-splitscreen-mod.sprx', '2.4 MB');
       hasBuiltMod = true;
       saveCurrentChatSnapshot();
       setBusy(false);
@@ -1150,16 +1169,6 @@
     }
 
     if (isFixRequest(text)) {
-      if (limitReached) {
-        addTyping();
-        await new Promise((r) => setTimeout(r, 400 + Math.random() * 250));
-        removeTyping();
-        await streamBotText(`You're still at your daily limit, ${userName} — upgrade to Nnana Pro to keep fixing.`);
-        addLimitCard();
-        saveCurrentChatSnapshot();
-        setBusy(false);
-        return;
-      }
       addTyping();
       await new Promise((r) => setTimeout(r, 400 + Math.random() * 300));
       removeTyping();
@@ -1167,24 +1176,17 @@
       await runFixFlow();
       modVersion++;
       await streamBotText(`Fixed it, ${userName}! The split screen sync bug is patched — it should run stable now.`);
-      addFileCard(`gta5-splitscreen-mod-v${modVersion}.zip`, '2.5 MB');
+      addFileCard(`gta5-splitscreen-mod-v${modVersion}.sprx`, '2.5 MB');
       hasFixedOnce = true;
-      saveCurrentChatSnapshot();
-      setBusy(false);
-      return;
-    }
 
-    if (isStillBrokenRequest(text)) {
+      // That was the one free fix — the limit hits right away now.
       addTyping();
-      await new Promise((r) => setTimeout(r, 700 + Math.random() * 400));
+      await new Promise((r) => setTimeout(r, 500 + Math.random() * 300));
       removeTyping();
-      await streamBotText(`Hmm, let me check what's going on...`);
-      addTyping();
-      await new Promise((r) => setTimeout(r, 900 + Math.random() * 500));
-      removeTyping();
-      await streamBotText(`Looks like you've hit your daily limit for script fixes.`);
+      await streamBotText(`Heads up, ${userName} — that was your free fix for the next 30 days. You've hit your daily limit.`);
       addLimitCard();
       limitReached = true;
+      updateInputLockUI();
       saveCurrentChatSnapshot();
       setBusy(false);
       return;
@@ -1265,6 +1267,7 @@
 
   // init
   updateSidebarProfile();
+  updateInputLockUI();
   renderChatList('');
 </script>
 </body>
