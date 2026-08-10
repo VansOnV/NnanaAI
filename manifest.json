@@ -1,7 +1,7 @@
 {
   "name": "Nnana AI",
   "short_name": "Nnana AI",
-  "start_url": "./nnana-ai-chat.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
